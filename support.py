@@ -33,9 +33,21 @@ class Button2:  # Создание и отображение кнопки
             self.clicked = False
         return action
 
+    def listener(self, screen, image):
+        pos = pygame.mouse.get_pos()
+        if self.rect.collidepoint(pos):
+            screen.blit(image, (0, 0))
+            return True
+        return False
+
 
 def get_real_image(image, scale=0.8):  # Функция для изменения размера кнопки
     return pygame.transform.scale(image, (int(image.get_width() * scale), int(image.get_height() * scale)))
+
+
+# Генератор карты, по умолчанию level: 1, 2, 3, 4, 5
+def generate_procedure_map(level=1):
+    pass
 
 
 # Константы:
@@ -47,3 +59,20 @@ button_continue = Button2(20, y1=232, image=continue_img, scale=1)
 
 quit_img = get_real_image(pygame.image.load('assets/buttons/button_quit.png').convert_alpha())
 button_quit = Button2(20, y1=338, image=quit_img, scale=1)
+
+background = pygame.image.load('assets/map/s.png')
+wait_fullscreen = False
+
+button_cave = Button2(120, y1=700, image=pygame.image.load('assets/transparent/transparent150x150.png'), scale=1)
+cave_img = pygame.image.load('assets/map/s_cave.png')
+
+button_castle = Button2(1200, 400, image=pygame.image.load("assets/transparent/transparent300x300.png"), scale=1)
+castle_img = pygame.image.load('assets/map/s_castle.png')
+
+button_ferm = Button2(600, 400, image=pygame.image.load('assets/transparent/transparent200x200.png'), scale=1)
+ferm_img = pygame.image.load('assets/map/s_ferm.png')
+
+button_wizard = Button2(1300, 700, image=pygame.image.load('assets/transparent/transparent300x300.png'), scale=1)
+wizard_img = pygame.image.load('assets/map/s_wizard.png')
+
+only_black = pygame.image.load('assets/game/only_black.png')
