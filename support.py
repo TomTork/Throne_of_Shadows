@@ -45,11 +45,6 @@ def get_real_image(image, scale=0.8):  # Функция для изменени�
     return pygame.transform.scale(image, (int(image.get_width() * scale), int(image.get_height() * scale)))
 
 
-# Генератор карты, по умолчанию level: 1, 2, 3, 4, 5
-def generate_procedure_map(level=1):
-    pass
-
-
 # Константы:
 new_game_img = get_real_image(pygame.image.load('assets/buttons/button_new_game.png').convert_alpha())
 button_new_game = Button2(20, y1=136, image=new_game_img, scale=1)
