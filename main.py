@@ -12,7 +12,10 @@ game_cycle = True
 fell_alive = True  # Переменная, следящая за жизнью игрока
 hp = 7
 level1 = generator.generate_procedure_map(1)
-x, y = 0, 0
+le_x, le_y = len(level1), len(level1[0])
+x, y = 1, 1
+print(level1)
+print(le_x, le_y)
 
 
 def show_start_buttons():
@@ -83,30 +86,12 @@ def main_module():
                     screen.blit(background, (0, 0))
         elif window == 2:  # В подземелье
             screen.blit(only_black, (0, 0))
-            for w in range(len(level1)):
-                for h in range(len(level1[0])):
+            for w in range(le_x):
+                for h in range(le_y):
                     if level1[w][h] == 1:
                         Wall(h * 10 + 50, w * 10 + 50).draw(screen)
-                    elif level1[w][h] == 0:
-                        Void(h * 10 + 50, w * 10 + 50).draw(screen)
                     if w == y and h == x:
                         Player(x * 10 + 50, y * 10 + 50).draw(screen)
-                    elif (y > w and x > h) or (y < 0 and x < 0):
-                        print("game over!")
-            for e in pygame.event.get():  # Обработка перемещения
-                if e.type == pygame.QUIT:
-                    exit()
-                    pygame.quit()
-                    break
-                if e.type == pygame.KEYDOWN:
-                    if e.key == pygame.K_s:
-                        y += 1
-                    if e.key == pygame.K_w:
-                        y -= 1
-                    if e.key == pygame.K_d:
-                        x += 1
-                    if e.key == pygame.K_a:
-                        x -= 1
 
         for event in pygame.event.get():  # Слушатель на нажатия кнопки
             if event.type == pygame.QUIT:
@@ -115,9 +100,22 @@ def main_module():
                 break
             if event.type == pygame.K_ESCAPE:
                 pygame.display.set_mode((1280, 720))
-            if event.type == pygame.K_F11:
-                print("TRUE")
-                pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F11 and False:
+                    pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                if window == 2 and event.key == pygame.K_s:
+                    if y + 1 < le_x and level1[y + 1][x] != 1:
+                        y += 1
+                if window == 2 and event.key == pygame.K_w:
+                    if level1[y - 1][x] != 1 and y - 1 >= 0:
+                        y -= 1
+                if window == 2 and event.key == pygame.K_d:
+                    if x + 1 < le_y and level1[y][x + 1] != 1:
+                        x += 1
+                if window == 2 and event.key == pygame.K_a:
+                    if level1[y][x - 1] != 1 and x - 1 >= 0:
+                        x -= 1
+
         pygame.display.update()
 
 
