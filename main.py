@@ -2,7 +2,7 @@ import generator
 from database import Database
 import pygame
 import threading
-from entity import Wall, Void, Player
+from entity import Wall, Void, Player, Enemy
 
 database = Database()
 window = 0  # Переменная, хранящая состояние окна
@@ -14,7 +14,6 @@ hp = 7
 level1 = generator.generate_procedure_map(1)
 le_x, le_y = len(level1), len(level1[0])
 x, y = 1, 1
-print(level1)
 print(le_x, le_y)
 
 
@@ -44,7 +43,7 @@ def main_module():
                      args=(1,), daemon=True).start()
 
     while game_cycle:  # Обработка работы pygame
-        clock.tick(20)
+        clock.tick(18)
         if window == 0:
             if button_new_game.draw():
                 print("NEW GAME")
@@ -90,6 +89,8 @@ def main_module():
                 for h in range(le_y):
                     if level1[w][h] == 1:
                         Wall(h * 10 + 50, w * 10 + 50).draw(screen)
+                    elif level1[w][h] == 5:
+                        Enemy(h * 10 + 50, w * 10 + 50).draw(screen)
                     if w == y and h == x:
                         Player(x * 10 + 50, y * 10 + 50).draw(screen)
 
