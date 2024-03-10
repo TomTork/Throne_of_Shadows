@@ -1,5 +1,6 @@
 import random
 import pygame
+import numpy
 
 
 # Вычисление вероятности какого-либо события
@@ -43,6 +44,12 @@ class Button2:  # Создание и отображение кнопки
 
 def get_real_image(image, scale=0.8):  # Функция для изменения размера кнопки
     return pygame.transform.scale(image, (int(image.get_width() * scale), int(image.get_height() * scale)))
+
+
+def n_text(text: str) -> list:
+    if len(text) < 40:
+        return [text]
+    return [text[i:i+40] for i in range(0, len(text), 40)][-10:]
 
 
 # Константы:
