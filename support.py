@@ -1,4 +1,7 @@
+import json.decoder
 import random
+import time
+
 import pygame
 import numpy
 
@@ -50,6 +53,38 @@ def n_text(text: str) -> list:
     if len(text) < 40:
         return [text]
     return [text[i:i+40] for i in range(0, len(text), 40)][-10:]
+
+
+def weapon_to_name_and_damage(weapon_id: int) -> (str, int):
+    match weapon_id:
+        case 1:
+            return "Кулаки", 1
+        case 2:
+            return "Кастет", 2
+        case 3:
+            return "Дубина", 3
+        case 4:
+            return "Ржавый меч", 4
+        case 5:
+            return "Железная труба", 5
+        case 6:
+            return "Меч", 6
+        case 7:
+            return "Святой меч", 7
+        case 8:
+            return "Сломанный меч героя", 8
+        case 9:
+            return "Меч героя", 9
+        case 10:
+            return "Ночная катана", 10
+        case _:
+            return "Ошибка", 0
+
+
+def to_normal_foods(food: str) -> dict:
+    if food != '':
+        return json.loads(food)
+    return dict()
 
 
 # Константы:

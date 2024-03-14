@@ -18,6 +18,11 @@ print(le_x, le_y)
 print(level1)
 text = 'Привет, это проверка длинного и осмысленного текста. Поэтому, привет ещё раз! Невероятно и удивительно, невероятно и удивительно, невероятно и...'
 in_fight = True
+type_enemy = 0  # 5 - st. enemy; 6 - mimic; 7 - boss;
+choice = 0
+action = -1
+# 0 1
+# 2 3
 action_stage = 1
 
 
@@ -37,11 +42,13 @@ def show_game_buttons():
 
 
 def main_module():
-    global window, screen, database, clock, fell_alive, hp, x, y
+    global window, screen, database, clock, fell_alive, hp, x, y, in_fight, \
+        type_enemy, choice, action
     from support import button_new_game, button_continue, \
         button_quit, background, wait_fullscreen, button_cave, \
         cave_img, button_castle, castle_img, button_ferm, ferm_img, \
-        button_wizard, wizard_img, only_black, n_text
+        button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage,\
+        to_normal_foods
 
     threading.Thread(target=show_start_buttons(),
                      args=(1,), daemon=True).start()
@@ -110,6 +117,26 @@ def main_module():
             if in_fight:
                 screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                             .render('Выберите действие', False, (255, 255, 255)), (900, 450))
+                # Атака(урон)=0 Еда=1
+                # Побег=2       Защита=3
+                name, damage = weapon_to_name_and_damage(database.get_weapons())
+                food = to_normal_foods(database.get_foods())
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'{name}: {damage}', False, (255, 255, 255)), (900, 480))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render('Еда', False, (255, 255, 255)), (1200, 480))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render('Сбежать', False, (255, 255, 255)), (900, 520))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render('Защита', False, (255, 255, 255)), (1200, 520))
+                if choice == 0:
+                    pygame.draw.line(screen, (153, 0, 0), (900, 480), (900, 500), 4)
+                elif choice == 1:
+                    pygame.draw.line(screen, (153, 0, 0), (1200, 480), (1200, 500), 4)
+                elif choice == 2:
+                    pygame.draw.line(screen, (153, 0, 0), (900, 520), (900, 540), 4)
+                elif choice == 3:
+                    pygame.draw.line(screen, (153, 0, 0), (1200, 520), (1200, 540), 4)
 
         for event in pygame.event.get():  # Слушатель на нажатия кнопки
             if event.type == pygame.QUIT:
@@ -124,15 +151,82 @@ def main_module():
                 if window == 2 and event.key == pygame.K_s:
                     if y + 1 < le_x and level1[y + 1][x] != 1:
                         y += 1
+                        if level1[y][x] == 5:  # enemy
+                            in_fight = True
+                            type_enemy = 5
+                        elif level1[y][x] == 6:  # mimic
+                            in_fight = True
+                            type_enemy = 6
+                        elif level1[y][x] == 7:  # boss
+                            in_fight = True
+                            type_enemy = 7
                 if window == 2 and event.key == pygame.K_w:
                     if level1[y - 1][x] != 1 and y - 1 >= 0:
                         y -= 1
+                        if level1[y][x] == 5:  # enemy
+                            in_fight = True
+                            type_enemy = 5
+                        elif level1[y][x] == 6:  # mimic
+                            in_fight = True
+                            type_enemy = 6
+                        elif level1[y][x] == 7:  # boss
+                            in_fight = True
+                            type_enemy = 7
                 if window == 2 and event.key == pygame.K_d:
                     if x + 1 < le_y and level1[y][x + 1] != 1:
                         x += 1
+                        if level1[y][x] == 5:  # enemy
+                            in_fight = True
+                            type_enemy = 5
+                        elif level1[y][x] == 6:  # mimic
+                            in_fight = True
+                            type_enemy = 6
+                        elif level1[y][x] == 7:  # boss
+                            in_fight = True
+                            type_enemy = 7
                 if window == 2 and event.key == pygame.K_a:
                     if level1[y][x - 1] != 1 and x - 1 >= 0:
                         x -= 1
+                        if level1[y][x] == 5:  # enemy
+                            in_fight = True
+                            type_enemy = 5
+                        elif level1[y][x] == 6:  # mimic
+                            in_fight = True
+                            type_enemy = 6
+                        elif level1[y][x] == 7:  # boss
+                            in_fight = True
+                            type_enemy = 7
+                if window == 2 and in_fight:
+                    if event.key == pygame.K_RIGHT:
+                        if choice < 3:
+                            choice += 1
+                        else:
+                            choice = 0
+                    elif event.key == pygame.K_DOWN:
+                        if choice == 0:
+                            choice = 2
+                        elif choice == 1:
+                            choice = 3
+                        elif choice == 2:
+                            choice = 0
+                        else:
+                            choice = 1
+                    elif event.key == pygame.K_LEFT:
+                        if choice > 0:
+                            choice -= 1
+                        else:
+                            choice = 3
+                    elif event.key == pygame.K_UP:
+                        if choice == 0:
+                            choice = 2
+                        elif choice == 1:
+                            choice = 3
+                        elif choice == 2:
+                            choice = 0
+                        elif choice == 3:
+                            choice = 1
+                    elif event.key == pygame.K_KP_ENTER:
+                        action = choice
 
         pygame.display.update()
 
