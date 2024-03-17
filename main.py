@@ -14,16 +14,16 @@ hp = 7
 level1 = generator.generate_procedure_map(1)
 le_x, le_y = len(level1), len(level1[0])
 x, y = 1, 1
-print(le_x, le_y)
-print(level1)
-text = 'Привет, это проверка длинного и осмысленного текста. Поэтому, привет ещё раз! Невероятно и удивительно, невероятно и удивительно, невероятно и...'
-in_fight = True
+text = ''
+in_fight = False
 type_enemy = 0  # 5 - st. enemy; 6 - mimic; 7 - boss;
 choice = 0
 action = -1
+in_food = False
+
+enemy = [1, '', 100]
 # 0 1
 # 2 3
-action_stage = 1
 
 
 def show_start_buttons():
@@ -43,13 +43,16 @@ def show_game_buttons():
 
 def main_module():
     global window, screen, database, clock, fell_alive, hp, x, y, in_fight, \
-        type_enemy, choice, action
+        type_enemy, choice, action, text, in_food
     from support import button_new_game, button_continue, \
         button_quit, background, wait_fullscreen, button_cave, \
         cave_img, button_castle, castle_img, button_ferm, ferm_img, \
         button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage,\
-        to_normal_foods
+        to_normal_foods, generate_money_from_chest
 
+    weapon_id = database.get_weapons()
+    food = to_normal_foods(database.get_foods())
+    name, damage = weapon_to_name_and_damage(weapon_id)
     threading.Thread(target=show_start_buttons(),
                      args=(1,), daemon=True).start()
 
@@ -110,6 +113,8 @@ def main_module():
                         Boss(h * 10 + 50, w * 10 + 50).draw(screen)
                     if w == y and h == x:
                         Player(x * 10 + 50, y * 10 + 50).draw(screen)
+            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                        .render(f"hp: {hp} / 7", True, (255, 255, 255)), (900, 10))
             f_text = n_text(text)
             for line in range(len(f_text)):
                 screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
@@ -119,16 +124,38 @@ def main_module():
                             .render('Выберите действие', False, (255, 255, 255)), (900, 450))
                 # Атака(урон)=0 Еда=1
                 # Побег=2       Защита=3
-                name, damage = weapon_to_name_and_damage(database.get_weapons())
-                food = to_normal_foods(database.get_foods())
-                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
-                            .render(f'{name}: {damage}', False, (255, 255, 255)), (900, 480))
-                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
-                            .render('Еда', False, (255, 255, 255)), (1200, 480))
-                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
-                            .render('Сбежать', False, (255, 255, 255)), (900, 520))
-                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
-                            .render('Защита', False, (255, 255, 255)), (1200, 520))
+
+                if in_food:
+                    if 'bread' in food or 'bread_w' in food or 'beer' in food or 'small_potion' in food\
+                            or 'big_potion' in food:
+                        if 'bread' in food:
+                            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                        .render(f'Bread: {food["bread"]}', False, (255, 255, 255)), (900, 480))
+                        elif 'bread_w' in food:
+                            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                        .render(f'Bread: {food["bread_w"]}', False, (255, 255, 255)), (900, 480))
+                        if 'beer' in food:
+                            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                        .render(f'Beer: {food["beer"]}', False, (255, 255, 255)), (1200, 480))
+                        if 'small_potion':
+                            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                        .render(f'S Potion: {food["small_potion"]}', False, (255, 255, 255)),
+                                        (900, 520))
+                        if 'big_potion':
+                            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                        .render(f'B Potion: {food["big_potion"]}', False, (255, 255, 255)), (1200, 520))
+                    else:
+                        in_food = False
+                else:
+                    screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                .render(f'{name}: {damage}', False, (255, 255, 255)), (900, 480))
+                    screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                .render('Еда', False, (255, 255, 255)), (1200, 480))
+                    screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                .render('Сбежать', False, (255, 255, 255)), (900, 520))
+                    screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                .render('Защита', False, (255, 255, 255)), (1200, 520))
+
                 if choice == 0:
                     pygame.draw.line(screen, (153, 0, 0), (900, 480), (900, 500), 4)
                 elif choice == 1:
@@ -160,6 +187,11 @@ def main_module():
                         elif level1[y][x] == 7:  # boss
                             in_fight = True
                             type_enemy = 7
+                        elif level1[y][x] == 2:
+                            level1[y][x] = 0
+                            money = generate_money_from_chest()
+                            database.set_money(database.get_money() + money)
+                            text += f'Получено {money}! '
                 if window == 2 and event.key == pygame.K_w:
                     if level1[y - 1][x] != 1 and y - 1 >= 0:
                         y -= 1
@@ -172,6 +204,11 @@ def main_module():
                         elif level1[y][x] == 7:  # boss
                             in_fight = True
                             type_enemy = 7
+                        elif level1[y][x] == 2:
+                            level1[y][x] = 0
+                            money = generate_money_from_chest()
+                            database.set_money(database.get_money() + money)
+                            text += f'Получено {money}! '
                 if window == 2 and event.key == pygame.K_d:
                     if x + 1 < le_y and level1[y][x + 1] != 1:
                         x += 1
@@ -184,6 +221,11 @@ def main_module():
                         elif level1[y][x] == 7:  # boss
                             in_fight = True
                             type_enemy = 7
+                        elif level1[y][x] == 2:
+                            level1[y][x] = 0
+                            money = generate_money_from_chest()
+                            database.set_money(database.get_money() + money)
+                            text += f'Получено {money}! '
                 if window == 2 and event.key == pygame.K_a:
                     if level1[y][x - 1] != 1 and x - 1 >= 0:
                         x -= 1
@@ -196,6 +238,11 @@ def main_module():
                         elif level1[y][x] == 7:  # boss
                             in_fight = True
                             type_enemy = 7
+                        elif level1[y][x] == 2:
+                            level1[y][x] = 0
+                            money = generate_money_from_chest()
+                            database.set_money(database.get_money() + money)
+                            text += f'Получено {money}! '
                 if window == 2 and in_fight:
                     if event.key == pygame.K_RIGHT:
                         if choice < 3:
@@ -225,8 +272,13 @@ def main_module():
                             choice = 0
                         elif choice == 3:
                             choice = 1
-                    elif event.key == pygame.K_KP_ENTER:
+                    elif event.key == pygame.K_KP_ENTER or event.key == pygame.KSCAN_KP_ENTER:
                         action = choice
+                        if not in_food and action == 1:
+                            in_food = True
+                    elif event.key == pygame.K_BACKSPACE:
+                        if in_food:
+                            in_food = False
 
         pygame.display.update()
 

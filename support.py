@@ -87,6 +87,10 @@ def to_normal_foods(food: str) -> dict:
     return dict()
 
 
+def generate_money_from_chest() -> int:
+    return random.randint(1, 4)
+
+
 # Константы:
 new_game_img = get_real_image(pygame.image.load('assets/buttons/button_new_game.png').convert_alpha())
 button_new_game = Button2(20, y1=136, image=new_game_img, scale=1)

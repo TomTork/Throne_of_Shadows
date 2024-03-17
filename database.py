@@ -17,7 +17,7 @@ class Database:
             others TEXT
         )""")
         if not self.get_all():  # auto generate table
-            self.c.execute("""INSERT INTO main VALUES(0,0,-1,-1,1,-1,0,"","")""")
+            self.c.execute("""INSERT INTO main VALUES(0,0,0,0,1,0,1,"","")""")
             self.conn.commit()
 
     def reload(self):
@@ -26,7 +26,7 @@ class Database:
         self.set_money(20)
         self.set_debt(1)
         self.set_taro(0)
-        self.set_weapons(0)
+        self.set_weapons(1)
         self.set_foods("")
         self.set_others("")
 
