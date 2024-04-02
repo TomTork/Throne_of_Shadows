@@ -117,3 +117,21 @@ button_wizard = Button2(1300, 700, image=pygame.image.load('assets/transparent/t
 wizard_img = pygame.image.load('assets/map/s_wizard.png')
 
 only_black = pygame.image.load('assets/game/only_black.png')
+
+field_choice = pygame.image.load('assets/backgrounds/field_choice.png')
+exit_button = Button2(500+600-48, 600+20, image=pygame.image.load('assets/buttons/in_game/48x48.png'), scale=1)
+
+plus_preview = [
+
+]
+
+plus_buttons = [
+    Button2(500+600-48-48, 600 + 40, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(500+600-48-48, 600 + 60, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(500+600-48-48, 600 + 80, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(500+600-48-48, 600 + 100, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(500+600-48-48, 600 + 120, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(500+600-48-48, 600 + 140, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(500+600-48-48, 600 + 160, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(500+600-48-48, 600 + 180, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1)
+]

@@ -48,16 +48,29 @@ def main_module():
         button_quit, background, wait_fullscreen, button_cave, \
         cave_img, button_castle, castle_img, button_ferm, ferm_img, \
         button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage,\
-        to_normal_foods, generate_money_from_chest
+        to_normal_foods, generate_money_from_chest, field_choice, exit_button,\
+        plus_buttons
 
     weapon_id = database.get_weapons()
     food = to_normal_foods(database.get_foods())
     name, damage = weapon_to_name_and_damage(weapon_id)
+    happy = database.get_happy()
+    happy_debug = True
+    money = database.get_money()
+    money_debug = True
     threading.Thread(target=show_start_buttons(),
                      args=(1,), daemon=True).start()
 
     while game_cycle:  # Обработка работы pygame
         clock.tick(15)
+        if happy_debug:  # обновляем уровень счастья
+            happy = database.get_happy()
+            if happy <= 0:
+                window = 4
+            happy_debug = False
+        if money_debug:
+            money = database.get_money()
+            money_debug = False
         if window == 0:
             if button_new_game.draw():
                 print("NEW GAME")
@@ -87,16 +100,23 @@ def main_module():
                 window = 2
             elif button_castle.draw():
                 screen.blit(castle_img, (0, 0))
+                window = 3
             elif button_ferm.draw():
                 screen.blit(ferm_img, (0, 0))
+                window = 3
             elif button_wizard.draw():
                 screen.blit(wizard_img, (0, 0))
+                window = 3
             else:
                 if not button_cave.listener(screen, cave_img) \
                         and not button_castle.listener(screen, castle_img) \
                         and not button_ferm.listener(screen, ferm_img) \
                         and not button_wizard.listener(screen, wizard_img):
                     screen.blit(background, (0, 0))
+            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                        .render(f'Уровень счастья граждан: {happy}', False, (255, 255, 255)), (10, 10))
+            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                        .render(f'Капитал: {money}', False, (255, 255, 255)), (10, 36))
         elif window == 2:  # В подземелье
             screen.blit(only_black, (0, 0))
             for w in range(le_x):
@@ -164,6 +184,15 @@ def main_module():
                     pygame.draw.line(screen, (153, 0, 0), (900, 520), (900, 540), 4)
                 elif choice == 3:
                     pygame.draw.line(screen, (153, 0, 0), (1200, 520), (1200, 540), 4)
+        elif window == 3:  # отображение товаров у торговца
+            screen.blit(field_choice, (500, 600))
+            if exit_button.draw():
+                window = 1
+            for index in range(len(plus_buttons)):
+                if plus_buttons[index].draw():
+                    print(i)
+        elif window == 4:  # обработка проигрыша
+            screen.blit(only_black, (0, 0))
 
         for event in pygame.event.get():  # Слушатель на нажатия кнопки
             if event.type == pygame.QUIT:
