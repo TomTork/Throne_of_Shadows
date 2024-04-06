@@ -19,11 +19,13 @@ b_draw = False  # Параметр, служащий для НЕ переотр�
 
 class Button2:  # Создание и отображение кнопки
     def __init__(self, x1=10, y1=0, image=None, scale=0.8):
-        width, height = image.get_width(), image.get_height()
-        self.image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+        self.width, self.height = image.get_width(), image.get_height()
+        self.image = pygame.transform.scale(image, (int(self.width * scale), int(self.height * scale)))
         self.rect = self.image.get_rect()
         self.rect.midleft = (x1, y1)
         self.clicked = False
+        self.x1 = x1
+        self.y1 = y1
 
     def draw(self):
         global b_draw
@@ -45,6 +47,33 @@ class Button2:  # Создание и отображение кнопки
         return False
 
 
+class Button:
+    def __init__(self, text, x_pos, y_pos, enabled=True, width=48, height=48, screen=None, font_size=36):
+        self.text = text
+        self.x_pos = x_pos
+        self.y_pos = y_pos
+        self.enabled = enabled
+        self.width = width
+        self.height = height
+        self.screen = screen
+        self.font_size = font_size
+
+    def draw(self):
+        button_text = pygame.font.SysFont('assets/font.ttf', self.font_size).render(self.text, True, 'black')
+        button_rect = pygame.rect.Rect((self.x_pos, self.y_pos), (self.width, self.height))
+        pygame.draw.rect(self.screen, 'grey', button_rect, 0, 5)
+        pygame.draw.rect(self.screen, 'black', button_rect, 2, 5)
+        self.screen.blit(button_text, (self.x_pos + 3, self.y_pos + 3))
+
+    def check_click(self):
+        mouse_pos = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()[0]
+        button_rect = pygame.rect.Rect((self.x_pos, self.y_pos), (self.width, self.height))
+        if click and button_rect.collidepoint(mouse_pos) and self.enabled:
+            return True
+        return False
+
+
 def get_real_image(image, scale=0.8):  # Функция для изменения размера кнопки
     return pygame.transform.scale(image, (int(image.get_width() * scale), int(image.get_height() * scale)))
 
@@ -60,22 +89,12 @@ def weapon_to_name_and_damage(weapon_id: int) -> (str, int):
         case 1:
             return "Кулаки", 1
         case 2:
-            return "Кастет", 2
-        case 3:
             return "Дубина", 3
-        case 4:
-            return "Ржавый меч", 4
-        case 5:
-            return "Железная труба", 5
-        case 6:
+        case 3:
             return "Меч", 6
-        case 7:
+        case 4:
             return "Святой меч", 7
-        case 8:
-            return "Сломанный меч героя", 8
-        case 9:
-            return "Меч героя", 9
-        case 10:
+        case 5:
             return "Ночная катана", 10
         case _:
             return "Ошибка", 0
@@ -83,7 +102,13 @@ def weapon_to_name_and_damage(weapon_id: int) -> (str, int):
 
 def to_normal_foods(food: str) -> dict:
     if food != '':
-        return json.loads(food)
+        return json.loads(food.replace("'", '"'))
+    return dict()
+
+
+def to_normal_others(others: str) -> dict:
+    if others != "":
+        return json.loads(others.replace("'", '"'))
     return dict()
 
 
@@ -119,19 +144,13 @@ wizard_img = pygame.image.load('assets/map/s_wizard.png')
 only_black = pygame.image.load('assets/game/only_black.png')
 
 field_choice = pygame.image.load('assets/backgrounds/field_choice.png')
-exit_button = Button2(500+600-48, 600+20, image=pygame.image.load('assets/buttons/in_game/48x48.png'), scale=1)
+exit_button = Button2(1052, 620, image=pygame.image.load('assets/buttons/in_game/48x48.png'), scale=1)
 
-plus_preview = [
-
-]
+plus_preview = get_real_image(pygame.image.load('assets/buttons/in_game/plus.png'), scale=0.5)
 
 plus_buttons = [
-    Button2(500+600-48-48, 600 + 40, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
-    Button2(500+600-48-48, 600 + 60, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
-    Button2(500+600-48-48, 600 + 80, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
-    Button2(500+600-48-48, 600 + 100, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
-    Button2(500+600-48-48, 600 + 120, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
-    Button2(500+600-48-48, 600 + 140, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
-    Button2(500+600-48-48, 600 + 160, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
-    Button2(500+600-48-48, 600 + 180, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1)
+    Button2(1004, 640, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(1004, 680, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(1004, 720, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
+    Button2(1004, 760, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1)
 ]

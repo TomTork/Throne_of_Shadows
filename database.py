@@ -17,7 +17,7 @@ class Database:
             others TEXT
         )""")
         if not self.get_all():  # auto generate table
-            self.c.execute("""INSERT INTO main VALUES(0,0,0,0,1,0,1,"","")""")
+            self.c.execute("""INSERT INTO main VALUES(0,0,100,20,1,0,1,"","")""")
             self.conn.commit()
 
     def reload(self):

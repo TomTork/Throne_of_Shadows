@@ -20,6 +20,7 @@ type_enemy = 0  # 5 - st. enemy; 6 - mimic; 7 - boss;
 choice = 0
 action = -1
 in_food = False
+type_trader = -1  # 0 - food, 1 - weapons, 2 - others
 
 enemy = [1, '', 100]
 # 0 1
@@ -43,14 +44,13 @@ def show_game_buttons():
 
 def main_module():
     global window, screen, database, clock, fell_alive, hp, x, y, in_fight, \
-        type_enemy, choice, action, text, in_food
+        type_enemy, choice, action, text, in_food, type_trader
     from support import button_new_game, button_continue, \
         button_quit, background, wait_fullscreen, button_cave, \
         cave_img, button_castle, castle_img, button_ferm, ferm_img, \
         button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage,\
         to_normal_foods, generate_money_from_chest, field_choice, exit_button,\
-        plus_buttons
-
+        Button, to_normal_others
     weapon_id = database.get_weapons()
     food = to_normal_foods(database.get_foods())
     name, damage = weapon_to_name_and_damage(weapon_id)
@@ -60,6 +60,12 @@ def main_module():
     money_debug = True
     threading.Thread(target=show_start_buttons(),
                      args=(1,), daemon=True).start()
+    plus_buttons2 = [
+        Button(' +', 1004, 640, screen=screen, font_size=50),
+        Button(' +', 1004, 690, screen=screen, font_size=50),
+        Button(' +', 1004, 740, screen=screen, font_size=50),
+        Button(' +', 1004, 790, screen=screen, font_size=50),
+    ]
 
     while game_cycle:  # Обработка работы pygame
         clock.tick(15)
@@ -77,20 +83,19 @@ def main_module():
                 database.reload()  # Очищение базы данных
                 window = 1
                 wait_fullscreen = True
-                fell_alive = True
-                hp = 7
             if button_continue.draw():
                 print("CONTINUE")
+                if database.get_existing() == 0:  # create new game
+                    database.reload()
                 window = 1
                 wait_fullscreen = True
-                if database.get_existing() == 0:
-                    # create new game
-                    pass
             if button_quit.draw():
                 print("QUIT")
                 exit()
                 pygame.quit()
                 break
+            fell_alive = True
+            hp = 7
         elif window == 1:
             if wait_fullscreen:
                 pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
@@ -101,12 +106,15 @@ def main_module():
             elif button_castle.draw():
                 screen.blit(castle_img, (0, 0))
                 window = 3
+                type_trader = 1
             elif button_ferm.draw():
                 screen.blit(ferm_img, (0, 0))
                 window = 3
+                type_trader = 0
             elif button_wizard.draw():
                 screen.blit(wizard_img, (0, 0))
                 window = 3
+                type_trader = 2
             else:
                 if not button_cave.listener(screen, cave_img) \
                         and not button_castle.listener(screen, castle_img) \
@@ -151,17 +159,14 @@ def main_module():
                         if 'bread' in food:
                             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                                         .render(f'Bread: {food["bread"]}', False, (255, 255, 255)), (900, 480))
-                        elif 'bread_w' in food:
+                        if 'bread_w' in food:
                             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
-                                        .render(f'Bread: {food["bread_w"]}', False, (255, 255, 255)), (900, 480))
-                        if 'beer' in food:
-                            screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
-                                        .render(f'Beer: {food["beer"]}', False, (255, 255, 255)), (1200, 480))
-                        if 'small_potion':
+                                        .render(f'Bread: {food["bread_w"]}', False, (255, 255, 255)), (1200, 480))
+                        if 'small_potion' in food:
                             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                                         .render(f'S Potion: {food["small_potion"]}', False, (255, 255, 255)),
                                         (900, 520))
-                        if 'big_potion':
+                        if 'big_potion' in food:
                             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                                         .render(f'B Potion: {food["big_potion"]}', False, (255, 255, 255)), (1200, 520))
                     else:
@@ -186,11 +191,117 @@ def main_module():
                     pygame.draw.line(screen, (153, 0, 0), (1200, 520), (1200, 540), 4)
         elif window == 3:  # отображение товаров у торговца
             screen.blit(field_choice, (500, 600))
+            if type_trader == 1:  # weapons
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Дубина (10 монет)', False, (255, 255, 255)), (550, 650))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Меч (30 монет)', False, (255, 255, 255)), (550, 700))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Святой меч (40 монет)', False, (255, 255, 255)), (550, 750))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Ночная катана (90 монет)', False, (255, 255, 255)), (550, 800))
+            elif type_trader == 0:  # food
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Хлеб (5 монет)', False, (255, 255, 255)), (550, 650))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Хлеб с ветчиной (15 монет)', False, (255, 255, 255)), (550, 700))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Малое зелье (50 монет)', False, (255, 255, 255)), (550, 750))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Большое зелье (70 монет)', False, (255, 255, 255)), (550, 800))
+            elif type_trader == 2:  # others
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Деревяный щит (10 монет)', False, (255, 255, 255)), (550, 650))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Железный щит (25 монет)', False, (255, 255, 255)), (550, 700))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Сверкающие пятки  (50 монет)', False, (255, 255, 255)), (550, 750))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f'Денежный тотем  (70 монет)', False, (255, 255, 255)), (550, 800))
             if exit_button.draw():
                 window = 1
-            for index in range(len(plus_buttons)):
-                if plus_buttons[index].draw():
-                    print(i)
+            for index in range(len(plus_buttons2)):
+                b = plus_buttons2[index]
+                b.draw()
+                b.enabled = True
+                if b.check_click():
+                    b.enabled = False
+                    if type_trader == 1:
+                        if index == 0:
+                            if database.get_money() >= 10:
+                                database.set_money(database.get_money() - 10)
+                                database.set_weapons(2)
+                        elif index == 1:
+                            if database.get_money() >= 30:
+                                database.set_money(database.get_money() - 30)
+                                database.set_weapons(3)
+                        elif index == 2:
+                            if database.get_money() >= 40:
+                                database.set_money(database.get_money() - 40)
+                                database.set_weapons(4)
+                        elif index == 3:
+                            if database.get_money() >= 90:
+                                database.set_money(database.get_money() - 90)
+                                database.set_weapons(5)
+                    elif type_trader == 0:
+                        if index == 0:
+                            if database.get_money() >= 5:
+                                database.set_money(database.get_money() - 5)
+                                foods = to_normal_foods(database.get_foods())
+                                if 'bread' in foods:
+                                    foods['bread'] += 1
+                                else:
+                                    foods['bread'] = 1
+                                database.set_foods(str(foods))
+                        elif index == 1:
+                            if database.get_money() >= 15:
+                                database.set_money(database.get_money() - 15)
+                                foods = to_normal_foods(database.get_foods())
+                                if 'bread_w' in foods:
+                                    foods['bread_w'] += 1
+                                else:
+                                    foods['bread_w'] = 1
+                                database.set_foods(str(foods))
+                        elif index == 2:
+                            if database.get_money() >= 50:
+                                database.set_money(database.get_money() - 50)
+                                foods = to_normal_foods(database.get_foods())
+                                if 'small_potion' in foods:
+                                    foods['small_potion'] += 1
+                                else:
+                                    foods['small_potion'] = 1
+                                database.set_foods(str(foods))
+                        elif index == 3:
+                            if database.get_money() >= 70:
+                                database.set_money(database.get_money() - 70)
+                                foods = to_normal_foods(database.get_foods())
+                                if 'big_potion' in foods:
+                                    foods['big_potion'] += 1
+                                else:
+                                    foods['big_potion'] = 1
+                                database.set_foods(str(foods))
+                    elif type_trader == 1:
+                        if index == 0:
+                            if database.get_money() >= 10:
+                                others = to_normal_others(database.get_others())
+                                others['shield'] = 5
+                                database.set_others(str(others))
+                        elif index == 1:
+                            if database.get_money() >= 25:
+                                others = to_normal_others(database.get_others())
+                                others['shield'] = 12
+                                database.set_others(str(others))
+                        elif index == 2:
+                            if database.get_money() >= 50:
+                                others = to_normal_others(database.get_others())
+                                others['boots'] = 25
+                                database.set_others(str(others))
+                        elif index == 3:
+                            if database.get_money() >= 70:
+                                others = to_normal_others(database.get_others())
+                                others['totem'] = True
+                                database.set_others(str(others))
+                    money_debug = True
         elif window == 4:  # обработка проигрыша
             screen.blit(only_black, (0, 0))
 
