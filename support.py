@@ -1,5 +1,7 @@
+import asyncio
 import json.decoder
 import random
+import threading
 import time
 
 import pygame
@@ -114,6 +116,43 @@ def to_normal_others(others: str) -> dict:
 
 def generate_money_from_chest() -> int:
     return random.randint(1, 4)
+
+
+class ViewEnemy:
+    def __init__(self, _id, hp, x, y):
+        self._id = _id
+        self.hp = hp
+        self.x = x
+        self.y = y
+
+    def get_id(self):
+        return self._id
+
+    def get_hp(self):
+        return self.hp
+
+    def get_x(self):
+        return self.x
+
+    def get_y(self):
+        return self.y
+
+    def set_hp(self, hp):
+        self.hp = hp
+
+    def set_x(self, x):
+        self.x = x
+
+    def set_y(self, y):
+        self.y = y
+
+    def set_coord(self, x, y):
+        self.set_x(x)
+        self.set_y(y)
+
+
+def generate_name_enemy():
+    pass
 
 
 # Константы:
