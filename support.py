@@ -1,11 +1,6 @@
-import asyncio
 import json.decoder
 import random
-import threading
-import time
-
 import pygame
-import numpy
 
 
 # Вычисление вероятности какого-либо события
@@ -151,8 +146,14 @@ class ViewEnemy:
         self.set_y(y)
 
 
-def generate_name_enemy():
-    pass
+# состояние, картинка, жизни, урон, шанс нанести урон, шанс сбежать, награда
+def generate_name_enemy(init=None):
+    if init is None:
+        ran = random.randint(0, 2)
+        if ran == 0:
+            return 'На вас напала Летучая мышь! ',\
+                get_real_image(pygame.image.load('assets/enemies/bat.png')), 2, 1, 25, 50, 1
+        return 'На вас напал Слизень! ', get_real_image(pygame.image.load('assets/enemies/slug.png')), 2, 1, 35, 45, 2
 
 
 # Константы:

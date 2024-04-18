@@ -1,3 +1,5 @@
+import time
+
 import generator
 from database import Database
 import pygame
@@ -22,6 +24,15 @@ choice = 0
 action = -1
 in_food = False
 type_trader = -1  # 0 - food, 1 - weapons, 2 - others
+init_enemy = True
+image_enemy = None
+hp_enemy = 1
+damage_enemy = 0
+chance_enemy = 100
+chance_escape = 100
+reward = 0
+motion = True  # первым ходит игрок
+x_enemy, y_enemy = 0, 0
 
 
 def show_start_buttons():
@@ -41,13 +52,15 @@ def show_game_buttons():
 
 def main_module():
     global window, screen, database, clock, fell_alive, hp, x, y, in_fight, \
-        type_enemy, choice, action, text, in_food, type_trader, level1
+        type_enemy, choice, action, text, in_food, type_trader, level1, \
+        init_enemy, image_enemy, hp_enemy, chance_enemy, chance_escape, \
+        reward, motion, damage_enemy, x_enemy, y_enemy
     from support import button_new_game, button_continue, \
         button_quit, background, wait_fullscreen, button_cave, \
         cave_img, button_castle, castle_img, button_ferm, ferm_img, \
         button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage,\
         to_normal_foods, generate_money_from_chest, field_choice, exit_button,\
-        Button, to_normal_others, ViewEnemy
+        Button, to_normal_others, ViewEnemy, generate_name_enemy, probability
     weapon_id = database.get_weapons()
     food = to_normal_foods(database.get_foods())
     name, damage = weapon_to_name_and_damage(weapon_id)
@@ -83,18 +96,15 @@ def main_module():
             money_debug = False
         if window == 0:
             if button_new_game.draw():
-                print("NEW GAME")
                 database.reload()  # Очищение базы данных
                 window = 1
                 wait_fullscreen = True
             if button_continue.draw():
-                print("CONTINUE")
                 if database.get_existing() == 0:  # create new game
                     database.reload()
                 window = 1
                 wait_fullscreen = True
             if button_quit.draw():
-                print("QUIT")
                 exit()
                 pygame.quit()
                 break
@@ -148,13 +158,31 @@ def main_module():
                             Player(x * 10 + 50, y * 10 + 50).draw(screen)
                         if level1[y][x] == 5:
                             in_fight = True
+                            init_enemy = True
+                            x_enemy, y_enemy = y, x
             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
-                        .render(f"hp: {hp} / 7", True, (255, 255, 255)), (900, 10))
+                        .render(f"hp: {hp} / 7", True, (255, 255, 255)), (900, 20))
             f_text = n_text(text)
             for line in range(len(f_text)):
                 screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                             .render(f_text[line], True, (255, 255, 255)), (900, 50 + line * 30))
             if in_fight:
+                if hp <= 0:  # проверка на смерть
+                    window = 4
+                if init_enemy:
+                    init_enemy = False
+                    generate = generate_name_enemy()
+                    text += generate[0]
+                    image_enemy = generate[1]
+                    hp_enemy = generate[2]
+                    damage_enemy = generate[3]
+                    chance_enemy = generate[4]
+                    chance_escape = generate[5]
+                    reward = generate[6]
+                    motion = True
+                screen.blit(image_enemy, (20, 20))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                            .render(f' | enemy hp: {hp_enemy}', True, (255, 255, 255)), (1000, 20))
                 screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                             .render('Выберите действие', False, (255, 255, 255)), (900, 450))
                 # Атака(урон)=0 Еда=1
@@ -196,6 +224,41 @@ def main_module():
                     pygame.draw.line(screen, (153, 0, 0), (900, 520), (900, 540), 4)
                 elif choice == 3:
                     pygame.draw.line(screen, (153, 0, 0), (1200, 520), (1200, 540), 4)
+                if hp_enemy <= 0:
+                    in_fight = False
+                    print(level1[x_enemy][y_enemy])
+                    level1[x_enemy][y_enemy] = 0
+                if motion:
+                    if action == 0:  # проводим урон
+                        action = -1
+                        if probability(random.randint(90, 100)):
+                            hp_enemy -= damage
+                            text += f'Вы попали: -{damage}! '
+                            motion = False
+                        else:
+                            text += 'Промах! '
+                            motion = False
+                    elif action == 2:  # пытаемся сбежать
+                        action = -1
+                        if probability(chance_escape):
+                            text += 'Побег успешен! '
+                            in_fight = False
+                        else:
+                            text += 'Побег не удался! '
+                            motion = False
+                    elif action == 3:  # защищаемся
+                        action = -1
+                        pass
+                else:  # ход противника
+                    time.sleep(.5)
+                    if probability(chance_enemy):
+                        # атака прошла успешно
+                        hp -= damage_enemy
+                        text += f'Противник попал: -{damage_enemy}! '
+                        motion = True
+                    else:
+                        text += 'Противник промахнулся! '
+                        motion = True
         elif window == 3:  # отображение товаров у торговца
             screen.blit(field_choice, (500, 600))
             if type_trader == 1:  # weapons
@@ -362,12 +425,15 @@ def main_module():
                         y -= 1
                         if level1[y][x] == 5:  # enemy
                             in_fight = True
+                            init_enemy = True
                             type_enemy = 5
                         elif level1[y][x] == 6:  # mimic
                             in_fight = True
+                            init_enemy = True
                             type_enemy = 6
                         elif level1[y][x] == 7:  # boss
                             in_fight = True
+                            init_enemy = True
                             type_enemy = 7
                         elif level1[y][x] == 2:
                             level1[y][x] = 0
