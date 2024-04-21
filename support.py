@@ -3,7 +3,6 @@ import random
 import pygame
 
 
-#
 # Вычисление вероятности какого-либо события
 def probability(chance) -> bool:
     random_number = random.randint(1, 100)
@@ -136,6 +135,10 @@ class ViewEnemy:
     def set_hp(self, hp):
         self.hp = hp
 
+    def set_hp_by_id(self, __id):
+        if self._id == __id:
+            self.hp = 0
+
     def set_x(self, x):
         self.x = x
 
@@ -195,3 +198,5 @@ plus_buttons = [
     Button2(1004, 720, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1),
     Button2(1004, 760, image=pygame.image.load('assets/buttons/in_game/plus.png'), scale=1)
 ]
+
+mimic_img = get_real_image(pygame.image.load('assets/enemies/mimic.jpg'))

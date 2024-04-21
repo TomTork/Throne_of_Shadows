@@ -33,6 +33,8 @@ chance_escape = 100
 reward = 0
 motion = True  # первым ходит игрок
 x_enemy, y_enemy = 0, 0
+enemy_id = -1
+escape = False
 
 
 def show_start_buttons():
@@ -54,13 +56,14 @@ def main_module():
     global window, screen, database, clock, fell_alive, hp, x, y, in_fight, \
         type_enemy, choice, action, text, in_food, type_trader, level1, \
         init_enemy, image_enemy, hp_enemy, chance_enemy, chance_escape, \
-        reward, motion, damage_enemy, x_enemy, y_enemy
+        reward, motion, damage_enemy, x_enemy, y_enemy, enemy_id, escape
     from support import button_new_game, button_continue, \
         button_quit, background, wait_fullscreen, button_cave, \
         cave_img, button_castle, castle_img, button_ferm, ferm_img, \
-        button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage,\
-        to_normal_foods, generate_money_from_chest, field_choice, exit_button,\
-        Button, to_normal_others, ViewEnemy, generate_name_enemy, probability
+        button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage, \
+        to_normal_foods, generate_money_from_chest, field_choice, exit_button, \
+        Button, to_normal_others, ViewEnemy, generate_name_enemy, probability, \
+        mimic_img
     weapon_id = database.get_weapons()
     food = to_normal_foods(database.get_foods())
     name, damage = weapon_to_name_and_damage(weapon_id)
@@ -78,8 +81,8 @@ def main_module():
     ]
 
     enemies = [
-        ViewEnemy(5, 10, 2, 2),
-        ViewEnemy(5, 10, 4, 4)
+        ViewEnemy(5, 2, 2, 2),
+        ViewEnemy(5, 3, 4, 4)
     ]
     for enemy in enemies:
         level1[enemy.x][enemy.y] = 5
@@ -96,14 +99,17 @@ def main_module():
             money_debug = False
         if window == 0:
             if button_new_game.draw():
+                print("NEW GAME - 0")
                 database.reload()  # Очищение базы данных
                 window = 1
                 wait_fullscreen = True
             if button_continue.draw():
                 if database.get_existing() == 0:  # create new game
+                    print("NEW GAME - 1")
                     database.reload()
                 window = 1
                 wait_fullscreen = True
+                database.set_existing(1)
             if button_quit.draw():
                 exit()
                 pygame.quit()
@@ -141,6 +147,8 @@ def main_module():
                         .render(f'Капитал: {money}', False, (255, 255, 255)), (10, 36))
         elif window == 2:  # В подземелье
             screen.blit(only_black, (0, 0))
+            if hp <= 0:
+                window = 4
             for w in range(le_x):
                 for h in range(le_y):
                     if not in_fight:  # если не находимся в битве
@@ -156,10 +164,15 @@ def main_module():
                             Boss(h * 10 + 50, w * 10 + 50).draw(screen)
                         if w == y and h == x:
                             Player(x * 10 + 50, y * 10 + 50).draw(screen)
-                        if level1[y][x] == 5:
+                        if not escape and level1[y][x] == 5:
+                            for e in range(len(enemies)):
+                                if enemies[e].x == y and enemies[e].y == x:
+                                    enemy_id = e
+                                    break
                             in_fight = True
                             init_enemy = True
                             x_enemy, y_enemy = y, x
+
             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                         .render(f"hp: {hp} / 7", True, (255, 255, 255)), (900, 20))
             f_text = n_text(text)
@@ -169,16 +182,26 @@ def main_module():
             if in_fight:
                 if hp <= 0:  # проверка на смерть
                     window = 4
-                if init_enemy:
+                if init_enemy and type_enemy != 6:
                     init_enemy = False
                     generate = generate_name_enemy()
                     text += generate[0]
                     image_enemy = generate[1]
-                    hp_enemy = generate[2]
+                    hp_enemy = enemies[enemy_id].hp
                     damage_enemy = generate[3]
                     chance_enemy = generate[4]
                     chance_escape = generate[5]
                     reward = generate[6]
+                    motion = True
+                elif init_enemy and type_enemy == 6:  # наш противник - мимик
+                    init_enemy = False
+                    text += 'На вас напал мимик! '
+                    image_enemy = mimic_img
+                    hp_enemy = 4
+                    damage_enemy = 4
+                    chance_enemy = 55
+                    chance_escape = 35
+                    reward = 10
                     motion = True
                 screen.blit(image_enemy, (20, 20))
                 screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
@@ -225,9 +248,14 @@ def main_module():
                 elif choice == 3:
                     pygame.draw.line(screen, (153, 0, 0), (1200, 520), (1200, 540), 4)
                 if hp_enemy <= 0:
+                    print(level1[y][x])
+                    print(enemy_id)
+                    if len(enemies) - 1 >= enemy_id:
+                        enemies.pop(enemy_id)
+                    level1[y][x] = 0
+                    print(level1[y][x])
                     in_fight = False
-                    print(level1[x_enemy][y_enemy])
-                    level1[x_enemy][y_enemy] = 0
+                    database.set_money(database.get_money() + reward)
                 if motion:
                     if action == 0:  # проводим урон
                         action = -1
@@ -242,6 +270,7 @@ def main_module():
                         action = -1
                         if probability(chance_escape):
                             text += 'Побег успешен! '
+                            escape = True
                             in_fight = False
                         else:
                             text += 'Побег не удался! '
@@ -374,6 +403,9 @@ def main_module():
                     money_debug = True
         elif window == 4:  # обработка проигрыша
             screen.blit(only_black, (0, 0))
+            screen.blit(pygame.font.SysFont('assets/font.ttf', 200)
+                        .render(f'Вы проиграли!', False, (89, 15, 21)), (450, 500))
+            database.reload()
 
         for event in pygame.event.get():  # Слушатель на нажатия кнопки
             if event.type == pygame.QUIT:
@@ -387,17 +419,13 @@ def main_module():
                     pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
                 if window == 2 and event.key == pygame.K_s:
                     if y + 1 < le_x and level1[y + 1][x] != 1:
+                        escape = False
                         y += 1
-                        if level1[y][x] == 5:  # enemy
+                        if level1[y][x] == 6:  # mimic
                             in_fight = True
-                            type_enemy = 5
-                        elif level1[y][x] == 6:  # mimic
-                            in_fight = True
+                            init_enemy = True
                             type_enemy = 6
-                        elif level1[y][x] == 7:  # boss
-                            in_fight = True
-                            type_enemy = 7
-                        elif level1[y][x] == 2:
+                        if level1[y][x] == 2:
                             level1[y][x] = 0
                             money = generate_money_from_chest()
                             database.set_money(database.get_money() + money)
@@ -405,37 +433,41 @@ def main_module():
                         for e in enemies:  # передвижение противников
                             m_x = len(level1)
                             m_y = len(level1[0])
-
-                            moves = [(e.x, e.y)]
-                            if e.x + 1 < m_x and level1[e.x + 1][e.y] == 0:
-                                moves.append((e.x + 1, e.y))
-                            if e.x - 1 >= 0 and level1[e.x - 1][e.y] == 0:
-                                moves.append((e.x - 1, e.y))
-                            if e.y + 1 < m_y and level1[e.x][e.y + 1] == 0:
-                                moves.append((e.x, e.y + 1))
-                            if e.y - 1 >= 0 and level1[e.x][e.y - 1] == 0:
-                                moves.append((e.x, e.y - 1))
-                            if len(moves) >= 1:
-                                ran = random.randint(0, len(moves) - 1)
-                                level1[e.x][e.y] = 0
-                                level1[moves[ran][0]][moves[ran][1]] = e.get_id()
-                                e.set_coord(moves[ran][0], moves[ran][1])
+                            if m_x == x and m_y == y:
+                                level1[y][x] = 0
+                                enemies.remove(e)
+                            else:
+                                moves = [(e.x, e.y)]
+                                if e.x + 1 < m_x and level1[e.x + 1][e.y] == 0:
+                                    moves.append((e.x + 1, e.y))
+                                if e.x - 1 >= 0 and level1[e.x - 1][e.y] == 0:
+                                    moves.append((e.x - 1, e.y))
+                                if e.y + 1 < m_y and level1[e.x][e.y + 1] == 0:
+                                    moves.append((e.x, e.y + 1))
+                                if e.y - 1 >= 0 and level1[e.x][e.y - 1] == 0:
+                                    moves.append((e.x, e.y - 1))
+                                if len(moves) >= 1:
+                                    ran = random.randint(0, len(moves) - 1)
+                                    level1[e.x][e.y] = 0
+                                    level1[moves[ran][0]][moves[ran][1]] = e.get_id()
+                                    e.set_coord(moves[ran][0], moves[ran][1])
                 if window == 2 and event.key == pygame.K_w:
                     if level1[y - 1][x] != 1 and y - 1 >= 0:
+                        escape = False
                         y -= 1
-                        if level1[y][x] == 5:  # enemy
-                            in_fight = True
-                            init_enemy = True
-                            type_enemy = 5
-                        elif level1[y][x] == 6:  # mimic
+                        # if level1[y][x] == 5:  # enemy
+                        #     in_fight = True
+                        #     init_enemy = True
+                        #     type_enemy = 5
+                        if level1[y][x] == 6:  # mimic
                             in_fight = True
                             init_enemy = True
                             type_enemy = 6
-                        elif level1[y][x] == 7:  # boss
-                            in_fight = True
-                            init_enemy = True
-                            type_enemy = 7
-                        elif level1[y][x] == 2:
+                        # elif level1[y][x] == 7:  # boss
+                        #     in_fight = True
+                        #     init_enemy = True
+                        #     type_enemy = 7
+                        if level1[y][x] == 2:
                             level1[y][x] = 0
                             money = generate_money_from_chest()
                             database.set_money(database.get_money() + money)
@@ -443,34 +475,39 @@ def main_module():
                         for e in enemies:  # передвижение противников
                             m_x = len(level1)
                             m_y = len(level1[0])
-
-                            moves = [(e.x, e.y)]
-                            if e.x + 1 < m_x and level1[e.x + 1][e.y] == 0:
-                                moves.append((e.x + 1, e.y))
-                            if e.x - 1 >= 0 and level1[e.x - 1][e.y] == 0:
-                                moves.append((e.x - 1, e.y))
-                            if e.y + 1 < m_y and level1[e.x][e.y + 1] == 0:
-                                moves.append((e.x, e.y + 1))
-                            if e.y - 1 >= 0 and level1[e.x][e.y - 1] == 0:
-                                moves.append((e.x, e.y - 1))
-                            if len(moves) >= 1:
-                                ran = random.randint(0, len(moves) - 1)
-                                level1[e.x][e.y] = 0
-                                level1[moves[ran][0]][moves[ran][1]] = e.get_id()
-                                e.set_coord(moves[ran][0], moves[ran][1])
+                            if m_x == x and m_y == y:
+                                level1[y][x] = 0
+                                enemies.remove(e)
+                            else:
+                                moves = [(e.x, e.y)]
+                                if e.x + 1 < m_x and level1[e.x + 1][e.y] == 0:
+                                    moves.append((e.x + 1, e.y))
+                                if e.x - 1 >= 0 and level1[e.x - 1][e.y] == 0:
+                                    moves.append((e.x - 1, e.y))
+                                if e.y + 1 < m_y and level1[e.x][e.y + 1] == 0:
+                                    moves.append((e.x, e.y + 1))
+                                if e.y - 1 >= 0 and level1[e.x][e.y - 1] == 0:
+                                    moves.append((e.x, e.y - 1))
+                                if len(moves) >= 1:
+                                    ran = random.randint(0, len(moves) - 1)
+                                    level1[e.x][e.y] = 0
+                                    level1[moves[ran][0]][moves[ran][1]] = e.get_id()
+                                    e.set_coord(moves[ran][0], moves[ran][1])
                 if window == 2 and event.key == pygame.K_d:
                     if x + 1 < le_y and level1[y][x + 1] != 1:
+                        escape = False
                         x += 1
-                        if level1[y][x] == 5:  # enemy
+                        # if level1[y][x] == 5:  # enemy
+                        #     in_fight = True
+                        #     type_enemy = 5
+                        if level1[y][x] == 6:  # mimic
                             in_fight = True
-                            type_enemy = 5
-                        elif level1[y][x] == 6:  # mimic
-                            in_fight = True
+                            init_enemy = True
                             type_enemy = 6
-                        elif level1[y][x] == 7:  # boss
-                            in_fight = True
-                            type_enemy = 7
-                        elif level1[y][x] == 2:
+                        # elif level1[y][x] == 7:  # boss
+                        #     in_fight = True
+                        #     type_enemy = 7
+                        if level1[y][x] == 2:
                             level1[y][x] = 0
                             money = generate_money_from_chest()
                             database.set_money(database.get_money() + money)
@@ -478,34 +515,39 @@ def main_module():
                         for e in enemies:  # передвижение противников
                             m_x = len(level1)
                             m_y = len(level1[0])
-
-                            moves = [(e.x, e.y)]
-                            if e.x + 1 < m_x and level1[e.x + 1][e.y] == 0:
-                                moves.append((e.x + 1, e.y))
-                            if e.x - 1 >= 0 and level1[e.x - 1][e.y] == 0:
-                                moves.append((e.x - 1, e.y))
-                            if e.y + 1 < m_y and level1[e.x][e.y + 1] == 0:
-                                moves.append((e.x, e.y + 1))
-                            if e.y - 1 >= 0 and level1[e.x][e.y - 1] == 0:
-                                moves.append((e.x, e.y - 1))
-                            if len(moves) >= 1:
-                                ran = random.randint(0, len(moves) - 1)
-                                level1[e.x][e.y] = 0
-                                level1[moves[ran][0]][moves[ran][1]] = e.get_id()
-                                e.set_coord(moves[ran][0], moves[ran][1])
+                            if m_x == x and m_y == y:
+                                level1[y][x] = 0
+                                enemies.remove(e)
+                            else:
+                                moves = [(e.x, e.y)]
+                                if e.x + 1 < m_x and level1[e.x + 1][e.y] == 0:
+                                    moves.append((e.x + 1, e.y))
+                                if e.x - 1 >= 0 and level1[e.x - 1][e.y] == 0:
+                                    moves.append((e.x - 1, e.y))
+                                if e.y + 1 < m_y and level1[e.x][e.y + 1] == 0:
+                                    moves.append((e.x, e.y + 1))
+                                if e.y - 1 >= 0 and level1[e.x][e.y - 1] == 0:
+                                    moves.append((e.x, e.y - 1))
+                                if len(moves) >= 1:
+                                    ran = random.randint(0, len(moves) - 1)
+                                    level1[e.x][e.y] = 0
+                                    level1[moves[ran][0]][moves[ran][1]] = e.get_id()
+                                    e.set_coord(moves[ran][0], moves[ran][1])
                 if window == 2 and event.key == pygame.K_a:
                     if level1[y][x - 1] != 1 and x - 1 >= 0:
+                        escape = False
                         x -= 1
-                        if level1[y][x] == 5:  # enemy
+                        # if level1[y][x] == 5:  # enemy
+                        #     in_fight = True
+                        #     type_enemy = 5
+                        if level1[y][x] == 6:  # mimic
                             in_fight = True
-                            type_enemy = 5
-                        elif level1[y][x] == 6:  # mimic
-                            in_fight = True
+                            init_enemy = True
                             type_enemy = 6
-                        elif level1[y][x] == 7:  # boss
-                            in_fight = True
-                            type_enemy = 7
-                        elif level1[y][x] == 2:
+                        # elif level1[y][x] == 7:  # boss
+                        #     in_fight = True
+                        #     type_enemy = 7
+                        if level1[y][x] == 2:
                             level1[y][x] = 0
                             money = generate_money_from_chest()
                             database.set_money(database.get_money() + money)
@@ -513,21 +555,24 @@ def main_module():
                         for e in enemies:  # передвижение противников
                             m_x = len(level1)
                             m_y = len(level1[0])
-
-                            moves = [(e.x, e.y)]
-                            if e.x + 1 < m_x and level1[e.x + 1][e.y] == 0:
-                                moves.append((e.x + 1, e.y))
-                            if e.x - 1 >= 0 and level1[e.x - 1][e.y] == 0:
-                                moves.append((e.x - 1, e.y))
-                            if e.y + 1 < m_y and level1[e.x][e.y + 1] == 0:
-                                moves.append((e.x, e.y + 1))
-                            if e.y - 1 >= 0 and level1[e.x][e.y - 1] == 0:
-                                moves.append((e.x, e.y - 1))
-                            if len(moves) >= 1:
-                                ran = random.randint(0, len(moves) - 1)
-                                level1[e.x][e.y] = 0
-                                level1[moves[ran][0]][moves[ran][1]] = e.get_id()
-                                e.set_coord(moves[ran][0], moves[ran][1])
+                            if m_x == x and m_y == y:
+                                level1[y][x] = 0
+                                enemies.remove(e)
+                            else:
+                                moves = [(e.x, e.y)]
+                                if e.x + 1 < m_x and level1[e.x + 1][e.y] == 0:
+                                    moves.append((e.x + 1, e.y))
+                                if e.x - 1 >= 0 and level1[e.x - 1][e.y] == 0:
+                                    moves.append((e.x - 1, e.y))
+                                if e.y + 1 < m_y and level1[e.x][e.y + 1] == 0:
+                                    moves.append((e.x, e.y + 1))
+                                if e.y - 1 >= 0 and level1[e.x][e.y - 1] == 0:
+                                    moves.append((e.x, e.y - 1))
+                                if len(moves) >= 1:
+                                    ran = random.randint(0, len(moves) - 1)
+                                    level1[e.x][e.y] = 0
+                                    level1[moves[ran][0]][moves[ran][1]] = e.get_id()
+                                    e.set_coord(moves[ran][0], moves[ran][1])
                 if window == 2 and in_fight:
                     if event.key == pygame.K_RIGHT:
                         if choice < 3:
@@ -557,7 +602,7 @@ def main_module():
                             choice = 0
                         elif choice == 3:
                             choice = 1
-                    elif event.key == pygame.K_KP_ENTER or event.key == pygame.KSCAN_KP_ENTER:
+                    elif event.key == pygame.K_RETURN:
                         action = choice
                         if not in_food and action == 1:
                             in_food = True
