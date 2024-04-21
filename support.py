@@ -45,7 +45,7 @@ class Button2:  # Создание и отображение кнопки
 
 
 class Button:
-    def __init__(self, text, x_pos, y_pos, enabled=True, width=48, height=48, screen=None, font_size=36):
+    def __init__(self, text, x_pos, y_pos, enabled=True, width=48, height=48, screen=None, font_size=36, color='grey'):
         self.text = text
         self.x_pos = x_pos
         self.y_pos = y_pos
@@ -54,11 +54,12 @@ class Button:
         self.height = height
         self.screen = screen
         self.font_size = font_size
+        self.color = color
 
     def draw(self):
         button_text = pygame.font.SysFont('assets/font.ttf', self.font_size).render(self.text, True, 'black')
         button_rect = pygame.rect.Rect((self.x_pos, self.y_pos), (self.width, self.height))
-        pygame.draw.rect(self.screen, 'grey', button_rect, 0, 5)
+        pygame.draw.rect(self.screen, self.color, button_rect, 0, 5)
         pygame.draw.rect(self.screen, 'black', button_rect, 2, 5)
         self.screen.blit(button_text, (self.x_pos + 3, self.y_pos + 3))
 

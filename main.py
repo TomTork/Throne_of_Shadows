@@ -1,10 +1,8 @@
 import time
-
 import generator
 from database import Database
 import pygame
-import threading
-from entity import Wall, Player, Enemy, Chest, Mimic, Boss
+from entity import Wall, Player, Enemy, Chest, Mimic, Boss, Exit
 import random
 
 database = Database()
@@ -71,8 +69,6 @@ def main_module():
     happy_debug = True
     money = database.get_money()
     money_debug = True
-    threading.Thread(target=show_start_buttons(),
-                     args=(1,), daemon=True).start()
     plus_buttons2 = [
         Button(' +', 1004, 640, screen=screen, font_size=50),
         Button(' +', 1004, 690, screen=screen, font_size=50),
@@ -86,7 +82,10 @@ def main_module():
     ]
     for enemy in enemies:
         level1[enemy.x][enemy.y] = 5
-
+    level1[len(level1) - 2][len(level1[0]) - 2] = 8  # генерация выхода
+    to_main_menu = Button('Выход в главное меню', 1610, 5, width=285, height=38, screen=screen)
+    to_main_menu2 = Button('Выход в главное меню', 800, 700,
+                           width=285, height=38, screen=screen, color=(33, 41, 55))
     while game_cycle:  # Обработка работы pygame
         clock.tick(15)
         if happy_debug:  # обновляем уровень счастья
@@ -98,14 +97,13 @@ def main_module():
             money = database.get_money()
             money_debug = False
         if window == 0:
+            show_start_buttons()
             if button_new_game.draw():
-                print("NEW GAME - 0")
                 database.reload()  # Очищение базы данных
                 window = 1
                 wait_fullscreen = True
             if button_continue.draw():
                 if database.get_existing() == 0:  # create new game
-                    print("NEW GAME - 1")
                     database.reload()
                 window = 1
                 wait_fullscreen = True
@@ -145,6 +143,12 @@ def main_module():
                         .render(f'Уровень счастья граждан: {happy}', False, (255, 255, 255)), (10, 10))
             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                         .render(f'Капитал: {money}', False, (255, 255, 255)), (10, 36))
+            to_main_menu.draw()
+            to_main_menu.enabled = True
+            if to_main_menu.check_click():
+                to_main_menu.enabled = False
+                window = 0
+                pygame.display.set_mode((1280, 720))
         elif window == 2:  # В подземелье
             screen.blit(only_black, (0, 0))
             if hp <= 0:
@@ -162,8 +166,13 @@ def main_module():
                             Mimic(h * 10 + 50, w * 10 + 50).draw(screen)
                         elif level1[w][h] == 7:
                             Boss(h * 10 + 50, w * 10 + 50).draw(screen)
+                        elif level1[w][h] == 8:  # выход
+                            Exit(h * 10 + 50, w * 10 + 50).draw(screen)
                         if w == y and h == x:
                             Player(x * 10 + 50, y * 10 + 50).draw(screen)
+                        if level1[w][h] == 8 and w == y and h == x:
+                            window = 1
+                            money_debug = True
                         if not escape and level1[y][x] == 5:
                             for e in range(len(enemies)):
                                 if enemies[e].x == y and enemies[e].y == x:
@@ -248,12 +257,9 @@ def main_module():
                 elif choice == 3:
                     pygame.draw.line(screen, (153, 0, 0), (1200, 520), (1200, 540), 4)
                 if hp_enemy <= 0:
-                    print(level1[y][x])
-                    print(enemy_id)
                     if len(enemies) - 1 >= enemy_id:
                         enemies.pop(enemy_id)
                     level1[y][x] = 0
-                    print(level1[y][x])
                     in_fight = False
                     database.set_money(database.get_money() + reward)
                 if motion:
@@ -406,7 +412,12 @@ def main_module():
             screen.blit(pygame.font.SysFont('assets/font.ttf', 200)
                         .render(f'Вы проиграли!', False, (89, 15, 21)), (450, 500))
             database.reload()
-
+            to_main_menu2.draw()
+            to_main_menu2.enabled = True
+            if to_main_menu2.check_click():
+                to_main_menu2.enabled = False
+                window = 0
+                pygame.display.set_mode((1280, 720))
         for event in pygame.event.get():  # Слушатель на нажатия кнопки
             if event.type == pygame.QUIT:
                 exit()
