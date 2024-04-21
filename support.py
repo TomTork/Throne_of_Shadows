@@ -169,16 +169,16 @@ button_quit = Button2(20, y1=338, image=quit_img, scale=1)
 background = pygame.image.load('assets/map/s.png')
 wait_fullscreen = False
 
-button_cave = Button2(120, y1=700, image=pygame.image.load('assets/transparent/transparent150x150.png'), scale=1)
+button_cave = Button2(130, y1=770, image=pygame.image.load('assets/transparent/transparent150x150.png'), scale=1)
 cave_img = pygame.image.load('assets/map/s_cave.png')
 
-button_castle = Button2(1200, 400, image=pygame.image.load("assets/transparent/transparent300x300.png"), scale=1)
+button_castle = Button2(1470, 400, image=pygame.image.load("assets/transparent/transparent300x300.png"), scale=1)
 castle_img = pygame.image.load('assets/map/s_castle.png')
 
-button_ferm = Button2(600, 400, image=pygame.image.load('assets/transparent/transparent200x200.png'), scale=1)
+button_ferm = Button2(760, 470, image=pygame.image.load('assets/transparent/transparent200x200.png'), scale=1)
 ferm_img = pygame.image.load('assets/map/s_ferm.png')
 
-button_wizard = Button2(1300, 700, image=pygame.image.load('assets/transparent/transparent300x300.png'), scale=1)
+button_wizard = Button2(1500, 880, image=pygame.image.load('assets/transparent/transparent300x300.png'), scale=1)
 wizard_img = pygame.image.load('assets/map/s_wizard.png')
 
 only_black = pygame.image.load('assets/game/only_black.png')
