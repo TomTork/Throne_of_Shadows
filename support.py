@@ -3,6 +3,7 @@ import random
 import pygame
 
 
+#
 # Вычисление вероятности какого-либо события
 def probability(chance) -> bool:
     random_number = random.randint(1, 100)
