@@ -120,6 +120,7 @@ class ViewEnemy:
         self.hp = hp
         self.x = x
         self.y = y
+        self.previous = [x, y]
 
     def get_id(self):
         return self._id
@@ -147,6 +148,7 @@ class ViewEnemy:
         self.y = y
 
     def set_coord(self, x, y):
+        self.previous = [self.x, self.y]
         self.set_x(x)
         self.set_y(y)
 
@@ -201,3 +203,4 @@ plus_buttons = [
 ]
 
 mimic_img = get_real_image(pygame.image.load('assets/enemies/mimic.jpg'))
+dragon_img = get_real_image(pygame.image.load('assets/enemies/dragon.jpg'))
