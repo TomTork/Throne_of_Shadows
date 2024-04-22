@@ -66,6 +66,9 @@ def main_module():
         mimic_img, dragon_img
     weapon_id = database.get_weapons()
     food = to_normal_foods(database.get_foods())
+    food_debug = True
+    others = to_normal_others(database.get_others())
+    others_debug = True
     name, damage = weapon_to_name_and_damage(weapon_id)
     happy = database.get_happy()
     happy_debug = True
@@ -109,6 +112,12 @@ def main_module():
         if money_debug:
             money = database.get_money()
             money_debug = False
+        if food_debug:
+            food_debug = False
+            food = to_normal_foods(database.get_foods())
+        if others_debug:
+            others_debug = False
+            others = to_normal_others(database.get_others())
         if window == 0:
             show_start_buttons()
             if button_new_game.draw():
@@ -211,13 +220,14 @@ def main_module():
                         if level1[w][h] == 8 and w == y and h == x:
                             window = 1
                             money_debug = True
-                        if not escape and level1[y][x] == 5:
+                        if not escape and (level1[y][x] == 5 or level1[y][x] == 6 or level1[y][x] == 7):
                             for e in range(len(enemies)):
                                 if enemies[e].x == y and enemies[e].y == x:
                                     enemy_id = e
                                     break
                             in_fight = True
                             init_enemy = True
+                            # type_enemy = level1[y][x]
                             x_enemy, y_enemy = y, x
 
             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
@@ -231,7 +241,7 @@ def main_module():
             if in_fight:
                 if hp <= 0:  # проверка на смерть
                     window = 4
-                if init_enemy and type_enemy != 6 and type_enemy != 7:
+                if init_enemy and level1[y][x] == 5:
                     init_enemy = False
                     generate = generate_name_enemy()
                     text += generate[0]
@@ -242,7 +252,7 @@ def main_module():
                     chance_escape = generate[5]
                     reward = generate[6]
                     motion = True
-                elif init_enemy and type_enemy == 6:  # наш противник - мимик
+                elif init_enemy and level1[y][x] == 6:  # наш противник - мимик
                     init_enemy = False
                     text += 'На вас напал мимик! '
                     image_enemy = mimic_img
@@ -252,7 +262,8 @@ def main_module():
                     chance_escape = 35
                     reward = 10
                     motion = True
-                elif init_enemy and type_enemy == 7:
+                elif init_enemy and level1[y][x] == 7:
+                    print("DRAGON!")
                     init_enemy = False
                     text += 'Вы угодили в лапы Дракона! '
                     image_enemy = dragon_img
@@ -261,6 +272,18 @@ def main_module():
                     chance_enemy = 90
                     chance_escape = 1
                     reward = 100
+                    motion = True
+                if image_enemy is None:
+                    print('GHOST ENEMY')
+                    init_enemy = False
+                    generate = generate_name_enemy()
+                    text += generate[0]
+                    image_enemy = generate[1]
+                    hp_enemy = enemies[enemy_id].hp
+                    damage_enemy = generate[3]
+                    chance_enemy = generate[4]
+                    chance_escape = generate[5]
+                    reward = generate[6]
                     motion = True
                 screen.blit(image_enemy, (20, 20))
                 screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
@@ -271,6 +294,7 @@ def main_module():
                 # Побег=2       Защита=3
 
                 if in_food:
+                    food_debug = True
                     if 'bread' in food or 'bread_w' in food or 'beer' in food or 'small_potion' in food\
                             or 'big_potion' in food:
                         if 'bread' in food:
@@ -379,7 +403,7 @@ def main_module():
             for index in range(len(plus_buttons2)):
                 b = plus_buttons2[index]
                 b.draw()
-                b.enabled = True
+                # b.enabled = True
                 if b.check_click():
                     b.enabled = False
                     if type_trader == 1:
@@ -458,6 +482,7 @@ def main_module():
                                 others['totem'] = True
                                 database.set_others(str(others))
                     money_debug = True
+                    others_debug = True
         elif window == 4:  # обработка проигрыша
             screen.blit(only_black, (0, 0))
             screen.blit(pygame.font.SysFont('assets/font.ttf', 200)
@@ -472,7 +497,7 @@ def main_module():
         if (window == 1 and money_render_state) or window == 3:
             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                         .render(f'Капитал: {money}', False, (255, 255, 255)), (10, 36))
-        for event in pygame.event.get():  # Слушатель на нажатия кнопки
+        for event in pygame.event.get():  # Слушатель на нажатия кнопок
             if event.type == pygame.QUIT:
                 exit()
                 pygame.quit()
@@ -486,78 +511,114 @@ def main_module():
                     if y + 1 < le_x and level1[y + 1][x] != 1:
                         escape = False
                         y += 1
+                        if level1[y][x] == 5:
+                            type_enemy = 5
+                            in_fight = True
+                            init_enemy = True
+                            for e in range(len(enemies)):
+                                if enemies[e].x == y and enemies[e].y == x:
+                                    enemy_id = e
+                                    break
                         if level1[y][x] == 6:  # mimic
-                            in_fight = True
-                            init_enemy = True
                             type_enemy = 6
-                        if level1[y][x] == 7:  # boss
                             in_fight = True
                             init_enemy = True
+                        if level1[y][x] == 7:  # boss
                             type_enemy = 7
+                            in_fight = True
+                            init_enemy = True
                         if level1[y][x] == 2:
                             level1[y][x] = 0
                             money = generate_money_from_chest()
                             database.set_money(database.get_money() + money)
                             text += f'Получено {money}! '
                             money_debug = True
-                        enemies_move(enemies) # передвижение противников
+                        if not in_fight:
+                            enemies_move(enemies)  # передвижение противников
                 if window == 2 and event.key == pygame.K_w:
                     if level1[y - 1][x] != 1 and y - 1 >= 0:
                         escape = False
                         y -= 1
+                        if level1[y][x] == 5:
+                            type_enemy = 5
+                            in_fight = True
+                            init_enemy = True
+                            for e in range(len(enemies)):
+                                if enemies[e].x == y and enemies[e].y == x:
+                                    enemy_id = e
+                                    break
                         if level1[y][x] == 6:  # mimic
-                            in_fight = True
-                            init_enemy = True
                             type_enemy = 6
-                        if level1[y][x] == 7:
                             in_fight = True
                             init_enemy = True
+                        if level1[y][x] == 7:
                             type_enemy = 7
+                            in_fight = True
+                            init_enemy = True
                         if level1[y][x] == 2:
                             level1[y][x] = 0
                             money = generate_money_from_chest()
                             database.set_money(database.get_money() + money)
                             text += f'Получено {money}! '
                             money_debug = True
-                        enemies_move(enemies) # передвижение противников
+                        if not in_fight:
+                            enemies_move(enemies)  # передвижение противников
                 if window == 2 and event.key == pygame.K_d:
                     if x + 1 < le_y and level1[y][x + 1] != 1:
                         escape = False
                         x += 1
+                        if level1[y][x] == 5:
+                            type_enemy = 5
+                            in_fight = True
+                            init_enemy = True
+                            for e in range(len(enemies)):
+                                if enemies[e].x == y and enemies[e].y == x:
+                                    enemy_id = e
+                                    break
                         if level1[y][x] == 6:  # mimic
-                            in_fight = True
-                            init_enemy = True
                             type_enemy = 6
-                        if level1[y][x] == 7:
                             in_fight = True
                             init_enemy = True
+                        if level1[y][x] == 7:
                             type_enemy = 7
+                            in_fight = True
+                            init_enemy = True
                         if level1[y][x] == 2:
                             level1[y][x] = 0
                             money = generate_money_from_chest()
                             database.set_money(database.get_money() + money)
                             text += f'Получено {money}! '
                             money_debug = True
-                        enemies_move(enemies) # передвижение противников
+                        if not in_fight:
+                            enemies_move(enemies)  # передвижение противников
                 if window == 2 and event.key == pygame.K_a:
                     if level1[y][x - 1] != 1 and x - 1 >= 0:
                         escape = False
                         x -= 1
+                        if level1[y][x] == 5:
+                            type_enemy = 5
+                            in_fight = True
+                            init_enemy = True
+                            for e in range(len(enemies)):
+                                if enemies[e].x == y and enemies[e].y == x:
+                                    enemy_id = e
+                                    break
                         if level1[y][x] == 6:  # mimic
-                            in_fight = True
-                            init_enemy = True
                             type_enemy = 6
-                        if level1[y][x] == 7:
                             in_fight = True
                             init_enemy = True
+                        if level1[y][x] == 7:
                             type_enemy = 7
+                            in_fight = True
+                            init_enemy = True
                         if level1[y][x] == 2:
                             level1[y][x] = 0
                             money = generate_money_from_chest()
                             database.set_money(database.get_money() + money)
                             text += f'Получено {money}! '
                             money_debug = True
-                        enemies_move(enemies) # передвижение противников
+                        if not in_fight:
+                            enemies_move(enemies)  # передвижение противников
                 if window == 2 and in_fight:
                     if event.key == pygame.K_RIGHT:
                         if choice < 3:
@@ -591,6 +652,66 @@ def main_module():
                         action = choice
                         if not in_food and action == 1:
                             in_food = True
+                            action = -1
+                        if in_food:
+                            time_foods = to_normal_foods(database.get_foods())
+                            if action == 0:
+                                if 'bread' in time_foods:
+                                    if time_foods['bread'] >= 1:
+                                        if probability(5):
+                                            if hp < 7:
+                                                text += 'Вы успешно восстановили жизнь! '
+                                                hp += 1
+                                            else:
+                                                text += 'Вы б восстановили жизнь, да и так сыты! '
+                                        else:
+                                            text += 'Хлеб ничего вам не дал... '
+                                        time_foods['bread'] -= 1
+                                        database.set_foods(str(time_foods))
+                                action = -1
+                                food_debug = True
+                            elif action == 1:
+                                if 'bread_w' in time_foods:
+                                    if time_foods['bread_w'] >= 1:
+                                        if probability(7):
+                                            if hp < 7:
+                                                text += 'Вы успешно восстановили жизнь! '
+                                                hp += 1
+                                            else:
+                                                text += ('Хотелось проверить, получится ли иметь больше жизней, '
+                                                         'чем позволено игрой? Но вы же не кот! ')
+                                        else:
+                                            text += 'Безуспешно, но вкусно... '
+                                        time_foods['bread_w'] -= 1
+                                        database.set_foods(str(time_foods))
+                                action = -1
+                                food_debug = True
+                            elif action == 2:
+                                if 'small_potion' in time_foods:
+                                    if time_foods['small_potion'] >= 1:
+                                        if hp < 7:
+                                            text += 'Восстановлена одна жизнь! '
+                                            hp += 1
+                                        else:
+                                            text += 'Увы, но вы потратили зелье впустую! '
+                                        time_foods['small_potion'] -= 1
+                                        database.set_foods(str(time_foods))
+                                action = -1
+                                food_debug = True
+                            elif action == 3:
+                                if 'big_potion' in time_foods:
+                                    if hp < 7:
+                                        text += 'Восстановлено! '
+                                        if hp == 6:
+                                            hp = 7
+                                        else:
+                                            hp += 2
+                                    else:
+                                        text += 'Какое расточительство! Жизни-то у вас полные! '
+                                    time_foods['big_potion'] -= 1
+                                    database.set_foods(str(time_foods))
+                                action = -1
+                                food_debug = True
                     elif event.key == pygame.K_BACKSPACE:
                         if in_food:
                             in_food = False
