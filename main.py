@@ -33,6 +33,7 @@ motion = True  # первым ходит игрок
 x_enemy, y_enemy = 0, 0
 enemy_id = -1
 escape = False
+long_escape = 0
 money_render_state = False
 
 
@@ -56,7 +57,7 @@ def main_module():
         type_enemy, choice, action, text, in_food, type_trader, level1, \
         init_enemy, image_enemy, hp_enemy, chance_enemy, chance_escape, \
         reward, motion, damage_enemy, x_enemy, y_enemy, enemy_id, escape, \
-        money_render_state
+        money_render_state, long_escape
     from support import button_new_game, button_continue, \
         button_quit, background, wait_fullscreen, button_cave, \
         cave_img, button_castle, castle_img, button_ferm, ferm_img, \
@@ -65,6 +66,7 @@ def main_module():
         Button, to_normal_others, ViewEnemy, generate_name_enemy, probability, \
         mimic_img, dragon_img
     weapon_id = database.get_weapons()
+    weapon_debug = True
     food = to_normal_foods(database.get_foods())
     food_debug = True
     others = to_normal_others(database.get_others())
@@ -107,8 +109,13 @@ def main_module():
     to_main_menu = Button('Выход в главное меню', 1610, 5, width=285, height=38, screen=screen)
     to_main_menu2 = Button('Выход в главное меню', 800, 700,
                            width=285, height=38, screen=screen, color=(33, 41, 55))
+    to_main_continue = Button('Продолжить', 800, 700,
+                              width=200, height=38, screen=screen, color=(33, 41, 55))
     while game_cycle:  # Обработка работы pygame
         clock.tick(15)
+        if weapon_debug:
+            name, damage = weapon_to_name_and_damage(database.get_weapons())
+            weapon_debug = False
         if money_debug:
             money = database.get_money()
             money_debug = False
@@ -263,7 +270,6 @@ def main_module():
                     reward = 10
                     motion = True
                 elif init_enemy and level1[y][x] == 7:
-                    print("DRAGON!")
                     init_enemy = False
                     text += 'Вы угодили в лапы Дракона! '
                     image_enemy = dragon_img
@@ -274,7 +280,6 @@ def main_module():
                     reward = 100
                     motion = True
                 if image_enemy is None:
-                    print('GHOST ENEMY')
                     init_enemy = False
                     generate = generate_name_enemy()
                     text += generate[0]
@@ -349,10 +354,11 @@ def main_module():
                             motion = False
                     elif action == 2:  # пытаемся сбежать
                         action = -1
-                        if probability(chance_escape):
+                        if probability(chance_escape) or ('boots' in others and probability(chance_escape + int(others['boots']))):
                             text += 'Побег успешен! '
                             escape = True
                             in_fight = False
+                            long_escape = 4
                         else:
                             text += 'Побег не удался! '
                             motion = False
@@ -361,7 +367,7 @@ def main_module():
                         pass
                 else:  # ход противника
                     time.sleep(.5)
-                    if probability(chance_enemy):
+                    if probability(chance_enemy) or ('shield' in others and probability(100 - int(others['shield']))):
                         # атака прошла успешно
                         hp -= damage_enemy
                         text += f'Противник попал: -{damage_enemy}! '
@@ -369,6 +375,7 @@ def main_module():
                     else:
                         text += 'Противник промахнулся! '
                         motion = True
+                    others_debug = True
         elif window == 3:  # отображение товаров у торговца
             screen.blit(field_choice, (500, 600))
             if type_trader == 1:  # weapons
@@ -403,7 +410,7 @@ def main_module():
             for index in range(len(plus_buttons2)):
                 b = plus_buttons2[index]
                 b.draw()
-                # b.enabled = True
+                b.enabled = True
                 if b.check_click():
                     b.enabled = False
                     if type_trader == 1:
@@ -423,7 +430,7 @@ def main_module():
                             if database.get_money() >= 90:
                                 database.set_money(database.get_money() - 90)
                                 database.set_weapons(5)
-                    elif type_trader == 0:
+                    if type_trader == 0:
                         if index == 0:
                             if database.get_money() >= 5:
                                 database.set_money(database.get_money() - 5)
@@ -460,43 +467,56 @@ def main_module():
                                 else:
                                     foods['big_potion'] = 1
                                 database.set_foods(str(foods))
-                    elif type_trader == 1:
+                    if type_trader == 2:
                         if index == 0:
                             if database.get_money() >= 10:
                                 others = to_normal_others(database.get_others())
                                 others['shield'] = 5
                                 database.set_others(str(others))
+                                database.set_money(database.get_money() - 10)
                         elif index == 1:
                             if database.get_money() >= 25:
                                 others = to_normal_others(database.get_others())
                                 others['shield'] = 12
                                 database.set_others(str(others))
+                                database.set_money(database.get_money() - 25)
                         elif index == 2:
                             if database.get_money() >= 50:
                                 others = to_normal_others(database.get_others())
                                 others['boots'] = 25
                                 database.set_others(str(others))
+                                database.set_money(database.get_money() - 50)
                         elif index == 3:
                             if database.get_money() >= 70:
                                 others = to_normal_others(database.get_others())
-                                others['totem'] = True
+                                others['totem'] = 1
                                 database.set_others(str(others))
+                                database.set_money(database.get_money() - 70)
                     money_debug = True
                     others_debug = True
+                    weapon_debug = True
         elif window == 4:  # обработка проигрыша
-            screen.blit(only_black, (0, 0))
-            screen.blit(pygame.font.SysFont('assets/font.ttf', 200)
-                        .render(f'Вы проиграли!', False, (89, 15, 21)), (450, 500))
-            database.reload()
-            to_main_menu2.draw()
-            to_main_menu2.enabled = True
-            if to_main_menu2.check_click():
-                to_main_menu2.enabled = False
-                window = 0
-                pygame.display.set_mode((1280, 720))
-        if (window == 1 and money_render_state) or window == 3:
+            if 'totem' in others and int(others['totem']) and probability(50):
+                others['totem'] = 0
+                database.set_others(str(others))
+                window = 1
+                # ПРОИГРЫВАЕМ ЗВУК СПАСЕНИЯ
+            else:
+                screen.blit(only_black, (0, 0))
+                screen.blit(pygame.font.SysFont('assets/font.ttf', 200)
+                            .render(f'Вы проиграли!', False, (89, 15, 21)), (450, 500))
+                database.reload()
+                to_main_menu2.draw()
+                to_main_menu2.enabled = True
+                if to_main_menu2.check_click():
+                    to_main_menu2.enabled = False
+                    window = 0
+                    pygame.display.set_mode((1280, 720))
+        if window == 1 and money_render_state or window == 3:
+            pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(10, 36, 180, 22))
             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                         .render(f'Капитал: {money}', False, (255, 255, 255)), (10, 36))
+
         for event in pygame.event.get():  # Слушатель на нажатия кнопок
             if event.type == pygame.QUIT:
                 exit()
@@ -699,7 +719,7 @@ def main_module():
                                 action = -1
                                 food_debug = True
                             elif action == 3:
-                                if 'big_potion' in time_foods:
+                                if 'big_potion' in time_foods and time_foods['big_potion'] > 0:
                                     if hp < 7:
                                         text += 'Восстановлено! '
                                         if hp == 6:
@@ -720,7 +740,7 @@ def main_module():
 
 
 def enemies_move(enemies):  # функция для обработки передвижения противников
-    global level1, x, y
+    global level1, x, y, escape, long_escape
     for e in enemies:
         m_x = len(level1)
         m_y = len(level1[0])
@@ -743,7 +763,7 @@ def enemies_move(enemies):  # функция для обработки пере�
                     level1[e.x][e.y] = 0
                     level1[moves[ran][0]][moves[ran][1]] = e.get_id()
                     e.set_coord(moves[ran][0], moves[ran][1])
-            elif e.get_id() == 7:
+            elif e.get_id() == 7 and long_escape == 0:
                 moves = []
                 if level1[e.x - 1][e.y] == 1 and level1[e.x][e.y - 1] == 1 and e.previous != [e.x + 1, e.y]:
                     level1[e.x][e.y] = 0
@@ -784,7 +804,8 @@ def enemies_move(enemies):  # функция для обработки пере�
                             level1[e.x][e.y] = 0
                             level1[moves[ran][0]][moves[ran][1]] = e.get_id()
                             e.set_coord(moves[ran][0], moves[ran][1])
-
+            elif e.get_id() == 7 and long_escape != 0:
+                long_escape -= 1
 
 if __name__ == '__main__':
     pygame.init()  # Инициализация
