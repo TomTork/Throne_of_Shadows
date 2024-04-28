@@ -23,7 +23,7 @@ class Database:
     def reload(self):
         self.set_existing(0)
         self.set_happy(100)
-        self.set_money(2000)
+        self.set_money(20)
         self.set_debt(1)
         self.set_taro(0)
         self.set_weapons(1)

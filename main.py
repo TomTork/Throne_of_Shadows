@@ -35,6 +35,7 @@ enemy_id = -1
 escape = False
 long_escape = 0
 money_render_state = False
+debug_ambient = True
 
 
 def show_start_buttons():
@@ -57,14 +58,14 @@ def main_module():
         type_enemy, choice, action, text, in_food, type_trader, level1, \
         init_enemy, image_enemy, hp_enemy, chance_enemy, chance_escape, \
         reward, motion, damage_enemy, x_enemy, y_enemy, enemy_id, escape, \
-        money_render_state, long_escape
+        money_render_state, long_escape, debug_ambient
     from support import button_new_game, button_continue, \
         button_quit, background, wait_fullscreen, button_cave, \
         cave_img, button_castle, castle_img, button_ferm, ferm_img, \
         button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage, \
         to_normal_foods, generate_money_from_chest, field_choice, exit_button, \
         Button, to_normal_others, ViewEnemy, generate_name_enemy, probability, \
-        mimic_img, dragon_img
+        mimic_img, dragon_img, endings, castle_on_fire, death_of_king
     weapon_id = database.get_weapons()
     weapon_debug = True
     food = to_normal_foods(database.get_foods())
@@ -109,8 +110,14 @@ def main_module():
     to_main_menu = Button('Выход в главное меню', 1610, 5, width=285, height=38, screen=screen)
     to_main_menu2 = Button('Выход в главное меню', 800, 700,
                            width=285, height=38, screen=screen, color=(33, 41, 55))
-    to_main_continue = Button('Продолжить', 800, 700,
-                              width=200, height=38, screen=screen, color=(33, 41, 55))
+    to_main_continue = Button('Продолжить', 855, 700,
+                              width=165, height=38, screen=screen, color=(255, 255, 255))
+
+    pygame.mixer.init(44100, -16, 2, 2048)
+    sound_totem = pygame.mixer.Sound('music/totem.mp3')
+    sound_ambient = pygame.mixer.Sound('music/ambient.mp3')
+    sound_totem.set_volume(0.5)
+    sound_ambient.set_volume(0.15)
     while game_cycle:  # Обработка работы pygame
         clock.tick(15)
         if weapon_debug:
@@ -126,6 +133,10 @@ def main_module():
             others_debug = False
             others = to_normal_others(database.get_others())
         if window == 0:
+            happy_debug = True
+            if debug_ambient:
+                debug_ambient = False
+                sound_ambient.play(loops=1)
             show_start_buttons()
             if button_new_game.draw():
                 database.reload()  # Очищение базы данных
@@ -145,6 +156,8 @@ def main_module():
             hp = 7
         elif window == 1:
             money_render_state = False
+            if money >= 2100:  # счастливая концовка, осознание, что монархия не нужна
+                window = 4
             if wait_fullscreen:
                 pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
                 wait_fullscreen = False
@@ -184,6 +197,7 @@ def main_module():
                 if happy <= 0:
                     window = 4
                 happy_debug = False
+                debt_debug = True
 
             if debt_debug:  # обновляем уровень долга
                 debt = database.get_debt()
@@ -199,6 +213,7 @@ def main_module():
             if to_main_menu.check_click():
                 to_main_menu.enabled = False
                 window = 0
+                debug_ambient = True
                 pygame.display.set_mode((1280, 720))
         elif window == 2:  # В подземелье
             screen.blit(only_black, (0, 0))
@@ -300,7 +315,7 @@ def main_module():
 
                 if in_food:
                     food_debug = True
-                    if 'bread' in food or 'bread_w' in food or 'beer' in food or 'small_potion' in food\
+                    if 'bread' in food or 'bread_w' in food or 'beer' in food or 'small_potion' in food \
                             or 'big_potion' in food:
                         if 'bread' in food:
                             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
@@ -354,7 +369,8 @@ def main_module():
                             motion = False
                     elif action == 2:  # пытаемся сбежать
                         action = -1
-                        if probability(chance_escape) or ('boots' in others and probability(chance_escape + int(others['boots']))):
+                        if (probability(chance_escape) or
+                                ('boots' in others and probability(chance_escape + int(others['boots'])))):
                             text += 'Побег успешен! '
                             escape = True
                             in_fight = False
@@ -496,22 +512,49 @@ def main_module():
                     others_debug = True
                     weapon_debug = True
         elif window == 4:  # обработка проигрыша
-            if 'totem' in others and int(others['totem']) and probability(50):
-                others['totem'] = 0
-                database.set_others(str(others))
-                window = 1
-                # ПРОИГРЫВАЕМ ЗВУК СПАСЕНИЯ
-            else:
+            if happy <= 0:  # свержение монархии, плохая концовка
                 screen.blit(only_black, (0, 0))
-                screen.blit(pygame.font.SysFont('assets/font.ttf', 200)
-                            .render(f'Вы проиграли!', False, (89, 15, 21)), (450, 500))
-                database.reload()
-                to_main_menu2.draw()
-                to_main_menu2.enabled = True
-                if to_main_menu2.check_click():
-                    to_main_menu2.enabled = False
+                screen.blit(endings[0], (50, 50))
+                text2 = list(map(''.join, zip(*[iter(castle_on_fire)] * 50)))
+                for line in range(len(text2)):
+                    screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                .render(text2[line], True, (255, 255, 255)), (1200, 50 + line * 30))
+                to_main_continue.draw()
+                if to_main_continue.check_click():
                     window = 0
+                    debug_ambient = True
                     pygame.display.set_mode((1280, 720))
+            elif money >= 2100:
+                screen.blit(only_black, (0, 0))
+                screen.blit(endings[1], (50, 50))
+                text2 = list(map(''.join, zip(*[iter(death_of_king)] * 50)))
+                for line in range(len(text2)):
+                    screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                .render(text2[line], True, (255, 255, 255)), (1200, 50 + line * 30))
+                to_main_continue.draw()
+                if to_main_continue.check_click():
+                    window = 0
+                    debug_ambient = True
+                    pygame.display.set_mode((1280, 720))
+            else:
+                if 'totem' in others and int(others['totem']) and probability(50):
+                    others['totem'] = 0
+                    database.set_others(str(others))
+                    window = 1
+                    sound_totem.play()
+                else:
+                    screen.blit(only_black, (0, 0))
+                    screen.blit(pygame.font.SysFont('assets/font.ttf', 200)
+                                .render(f'Вы проиграли!', False, (89, 15, 21)), (450, 500))
+                    database.reload()
+                    to_main_menu2.draw()
+                    to_main_menu2.enabled = True
+                    if to_main_menu2.check_click():
+                        to_main_menu2.enabled = False
+                        window = 0
+                        debug_ambient = True
+                        pygame.display.set_mode((1280, 720))
+
         if window == 1 and money_render_state or window == 3:
             pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(10, 36, 180, 22))
             screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
@@ -807,8 +850,8 @@ def enemies_move(enemies):  # функция для обработки пере�
             elif e.get_id() == 7 and long_escape != 0:
                 long_escape -= 1
 
+
 if __name__ == '__main__':
     pygame.init()  # Инициализация
     pygame.display.set_caption('Throne of Shadows')
     main_module()
-
