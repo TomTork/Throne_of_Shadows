@@ -65,7 +65,8 @@ def main_module():
         button_wizard, wizard_img, only_black, n_text, weapon_to_name_and_damage, \
         to_normal_foods, generate_money_from_chest, field_choice, exit_button, \
         Button, to_normal_others, ViewEnemy, generate_name_enemy, probability, \
-        mimic_img, dragon_img, endings, castle_on_fire, death_of_king
+        mimic_img, dragon_img, endings, castle_on_fire, death_of_king, king_slug, \
+        my_friend_king_of_slugs
     weapon_id = database.get_weapons()
     weapon_debug = True
     food = to_normal_foods(database.get_foods())
@@ -116,7 +117,7 @@ def main_module():
     pygame.mixer.init(44100, -16, 2, 2048)
     sound_totem = pygame.mixer.Sound('music/totem.mp3')
     sound_ambient = pygame.mixer.Sound('music/ambient.mp3')
-    sound_totem.set_volume(0.5)
+    sound_totem.set_volume(0.3)
     sound_ambient.set_volume(0.15)
     while game_cycle:  # Обработка работы pygame
         clock.tick(15)
@@ -239,10 +240,11 @@ def main_module():
                             SBoss(h * 10 + 50, w * 10 + 50).draw(screen)
                         if w == y and h == x:
                             Player(x * 10 + 50, y * 10 + 50).draw(screen)
-                        if level1[w][h] == 8 and w == y and h == x:
+                        if level1[w][h] == 8 and w == y and h == x:  # выход
                             window = 1
                             money_debug = True
-                        if not escape and (level1[y][x] == 5 or level1[y][x] == 6 or level1[y][x] == 7):
+                        if not escape and (level1[y][x] == 5 or level1[y][x] == 6 or level1[y][x] == 7
+                                           or level1[y][x] == 10):
                             for e in range(len(enemies)):
                                 if enemies[e].x == y and enemies[e].y == x:
                                     enemy_id = e
@@ -294,6 +296,16 @@ def main_module():
                     chance_escape = 1
                     reward = 100
                     motion = True
+                elif init_enemy and level1[y][x] == 10:
+                    init_enemy = False
+                    text += 'Секретный босс: Король слизней! '
+                    image_enemy = king_slug
+                    hp_enemy = 30
+                    damage_enemy = 5
+                    chance_enemy = 90
+                    chance_escape = 2
+                    reward = 100
+                    motion = True
                 if image_enemy is None:
                     init_enemy = False
                     generate = generate_name_enemy()
@@ -340,7 +352,7 @@ def main_module():
                     screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
                                 .render('Сбежать', False, (255, 255, 255)), (900, 520))
                     screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
-                                .render('Защита', False, (255, 255, 255)), (1200, 520))
+                                .render('Договориться', False, (255, 255, 255)), (1200, 520))
 
                 if choice == 0:
                     pygame.draw.line(screen, (153, 0, 0), (900, 480), (900, 500), 4)
@@ -357,6 +369,8 @@ def main_module():
                     in_fight = False
                     database.set_money(database.get_money() + reward)
                     money_debug = True
+                    if type_enemy == 10 and chance_escape == 2:
+                        window = 4
                 if motion:
                     if action == 0:  # проводим урон
                         action = -1
@@ -378,9 +392,19 @@ def main_module():
                         else:
                             text += 'Побег не удался! '
                             motion = False
-                    elif action == 3:  # защищаемся
+                    elif action == 3:  # пытаемся договориться
+                        if probability(1):
+                            text += 'Вам удалось убедить противника сдасться, он отдал Вам всё своё состояние! '
+                            in_fight = False
+                            database.set_money(database.get_money() + reward)
+                            money_debug = True
+                            escape = True
+                            long_escape = 4
+                        else:
+                            text += 'Противник оказался несговорчивым... '
+                            motion = False
                         action = -1
-                        pass
+
                 else:  # ход противника
                     time.sleep(.5)
                     if probability(chance_enemy) or ('shield' in others and probability(100 - int(others['shield']))):
@@ -521,6 +545,7 @@ def main_module():
                                 .render(text2[line], True, (255, 255, 255)), (1200, 50 + line * 30))
                 to_main_continue.draw()
                 if to_main_continue.check_click():
+                    database.reload()
                     window = 0
                     debug_ambient = True
                     pygame.display.set_mode((1280, 720))
@@ -533,6 +558,20 @@ def main_module():
                                 .render(text2[line], True, (255, 255, 255)), (1200, 50 + line * 30))
                 to_main_continue.draw()
                 if to_main_continue.check_click():
+                    database.reload()
+                    window = 0
+                    debug_ambient = True
+                    pygame.display.set_mode((1280, 720))
+            elif type_enemy == 10 and chance_escape == 2:  # секретная концовка
+                screen.blit(only_black, (0, 0))
+                screen.blit(endings[2], (50, 50))
+                text2 = list(map(''.join, zip(*[iter(my_friend_king_of_slugs)] * 50)))
+                for line in range(len(text2)):
+                    screen.blit(pygame.font.SysFont('assets/font.ttf', 36)
+                                .render(text2[line], True, (255, 255, 255)), (1200, 50 + line * 30))
+                to_main_continue.draw()
+                if to_main_continue.check_click():
+                    database.reload()
                     window = 0
                     debug_ambient = True
                     pygame.display.set_mode((1280, 720))
@@ -596,6 +635,10 @@ def main_module():
                             database.set_money(database.get_money() + money)
                             text += f'Получено {money}! '
                             money_debug = True
+                        if level1[y][x] == 10:
+                            type_enemy = 10
+                            in_fight = True
+                            init_enemy = True
                         if not in_fight:
                             enemies_move(enemies)  # передвижение противников
                 if window == 2 and event.key == pygame.K_w:
@@ -624,6 +667,10 @@ def main_module():
                             database.set_money(database.get_money() + money)
                             text += f'Получено {money}! '
                             money_debug = True
+                        if level1[y][x] == 10:
+                            type_enemy = 10
+                            in_fight = True
+                            init_enemy = True
                         if not in_fight:
                             enemies_move(enemies)  # передвижение противников
                 if window == 2 and event.key == pygame.K_d:
@@ -652,6 +699,10 @@ def main_module():
                             database.set_money(database.get_money() + money)
                             text += f'Получено {money}! '
                             money_debug = True
+                        if level1[y][x] == 10:
+                            type_enemy = 10
+                            in_fight = True
+                            init_enemy = True
                         if not in_fight:
                             enemies_move(enemies)  # передвижение противников
                 if window == 2 and event.key == pygame.K_a:
@@ -680,6 +731,10 @@ def main_module():
                             database.set_money(database.get_money() + money)
                             text += f'Получено {money}! '
                             money_debug = True
+                        if level1[y][x] == 10:
+                            type_enemy = 10
+                            in_fight = True
+                            init_enemy = True
                         if not in_fight:
                             enemies_move(enemies)  # передвижение противников
                 if window == 2 and in_fight:
