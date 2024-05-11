@@ -156,6 +156,7 @@ def main_module():
             fell_alive = True
             hp = 7
         elif window == 1:
+            x, y = 1, 1
             money_render_state = False
             if money >= 2100:  # счастливая концовка, осознание, что монархия не нужна
                 window = 4
