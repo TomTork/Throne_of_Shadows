@@ -1,14 +1,8 @@
-# Генератор карты, по умолчанию level: 1, 2, 3, 4, 5
 import random
 import pygame.draw
 
 
-start_x = 50
-start_y = 50
-b = 0
-
-
-def generate_procedure_map(level=1):
+def generate_procedure_map():
     # 0 - void, 1 - wall, 2 - chest, 3 - player, 4 - next floor, 5 - standard enemy
     # 6 - mimic, 7 - boss, 8 - exit, 9 - death (real void)
     m_or_c = [random.randint(0, 1) for _ in range(32)]

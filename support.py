@@ -98,14 +98,6 @@ def weapon_to_name_and_damage(weapon_id: int) -> (str, int):
             return "Ошибка", 0
 
 
-# "life": <int, ex.: +1; -1>; "vampire": <int, ex.: 1; 0>; "luck": <int, ex.: 1; 0>; "kvant": <int, ex.: 1; 0>;
-# "win": <int, ex.: 1; 0>; "maniac": <int, ex.: 1; 0>
-def to_normal_tarot(value: str) -> dict:
-    if value != '':
-        return json.loads(value.replace("'", '"'))
-    return dict()
-
-
 def to_normal_foods(food: str) -> dict:
     if food != '':
         return json.loads(food.replace("'", '"'))
@@ -166,7 +158,7 @@ def generate_name_enemy(init=None):
     if init is None:
         ran = random.randint(0, 2)
         if ran == 0:
-            return 'На вас напала Летучая мышь! ',\
+            return 'На вас напала Летучая мышь! ', \
                 get_real_image(pygame.image.load('assets/enemies/bat.png')), 2, 1, 25, 50, 1
         return 'На вас напал Слизень! ', get_real_image(pygame.image.load('assets/enemies/slug.png')), 2, 1, 35, 45, 2
 

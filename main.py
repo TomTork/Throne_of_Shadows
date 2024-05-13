@@ -9,10 +9,8 @@ database = Database()
 window = 0  # Переменная, хранящая состояние окна
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
-game_cycle = True
-fell_alive = True  # Переменная, следящая за жизнью игрока
 hp = 7
-level1 = generator.generate_procedure_map(1)
+level1 = generator.generate_procedure_map()
 le_x, le_y = len(level1), len(level1[0])
 x, y = 1, 1
 text = ''
@@ -48,13 +46,8 @@ def show_start_buttons():
     screen.blit(quit_img, (20, 300))
 
 
-def show_game_buttons():
-    from support import button_cave
-    screen.blit(button_cave, (20, 1800))
-
-
 def main_module():
-    global window, screen, database, clock, fell_alive, hp, x, y, in_fight, \
+    global window, screen, database, clock, hp, x, y, in_fight, \
         type_enemy, choice, action, text, in_food, type_trader, level1, \
         init_enemy, image_enemy, hp_enemy, chance_enemy, chance_escape, \
         reward, motion, damage_enemy, x_enemy, y_enemy, enemy_id, escape, \
@@ -119,7 +112,7 @@ def main_module():
     sound_ambient = pygame.mixer.Sound('music/ambient.mp3')
     sound_totem.set_volume(0.3)
     sound_ambient.set_volume(0.15)
-    while game_cycle:  # Обработка работы pygame
+    while True:  # Обработка работы pygame
         clock.tick(15)
         if weapon_debug:
             name, damage = weapon_to_name_and_damage(database.get_weapons())
@@ -153,7 +146,6 @@ def main_module():
                 exit()
                 pygame.quit()
                 break
-            fell_alive = True
             hp = 7
         elif window == 1:
             x, y = 1, 1
@@ -610,7 +602,7 @@ def main_module():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F11 and False:
                     pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-                if window == 2 and event.key == pygame.K_s:
+                if not in_fight and window == 2 and event.key == pygame.K_s:
                     if y + 1 < le_x and level1[y + 1][x] != 1:
                         escape = False
                         y += 1
@@ -642,7 +634,7 @@ def main_module():
                             init_enemy = True
                         if not in_fight:
                             enemies_move(enemies)  # передвижение противников
-                if window == 2 and event.key == pygame.K_w:
+                if not in_fight and window == 2 and event.key == pygame.K_w:
                     if level1[y - 1][x] != 1 and y - 1 >= 0:
                         escape = False
                         y -= 1
@@ -674,7 +666,7 @@ def main_module():
                             init_enemy = True
                         if not in_fight:
                             enemies_move(enemies)  # передвижение противников
-                if window == 2 and event.key == pygame.K_d:
+                if not in_fight and window == 2 and event.key == pygame.K_d:
                     if x + 1 < le_y and level1[y][x + 1] != 1:
                         escape = False
                         x += 1
@@ -706,7 +698,7 @@ def main_module():
                             init_enemy = True
                         if not in_fight:
                             enemies_move(enemies)  # передвижение противников
-                if window == 2 and event.key == pygame.K_a:
+                if not in_fight and window == 2 and event.key == pygame.K_a:
                     if level1[y][x - 1] != 1 and x - 1 >= 0:
                         escape = False
                         x -= 1
